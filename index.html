@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>USTC 高新校区生活地图</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, 'PingFang SC', sans-serif; background: #0f172a; color: #e2e8f0; }
+  .header { padding: 12px 20px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom: 1px solid #334155; display: flex; align-items: center; gap: 12px; }
+  .header h1 { font-size: 18px; font-weight: 600; }
+  .header .tag { background: #22c55e; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+  .header .home-btn { margin-left: auto; padding: 4px 12px; border-radius: 8px; border: 1px solid #475569; background: transparent; color: #94a3b8; font-size: 12px; cursor: pointer; text-decoration: none; display: inline-block; }
+  .header .home-btn:hover { background: #334155; color: #f1f5f9; }
+  .container { display: grid; grid-template-columns: 45% 1fr; height: calc(100vh - 50px); }
+  .sidebar { background: #1e293b; overflow-y: auto; border-right: 1px solid #334155; }
+  .sidebar::-webkit-scrollbar { width: 6px; }
+  .sidebar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  .search-box { padding: 12px; border-bottom: 1px solid #334155; }
+  .search-box input { width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #475569; background: #0f172a; color: #e2e8f0; font-size: 14px; outline: none; }
+  .search-box input:focus { border-color: #3b82f6; }
+  .search-box input::placeholder { color: #64748b; }
+  .tabs { display: flex; border-bottom: 1px solid #334155; gap: 2px; }
+  .tab { flex: 1; padding: 8px 4px; text-align: center; font-size: 12px; cursor: pointer; color: #94a3b8; border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap; }
+  .tab:hover { color: #e2e8f0; }
+  .tab.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+  .quick-btns { padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid #334155; }
+  .quick-btn { padding: 5px 12px; border-radius: 14px; border: 1px solid #475569; background: transparent; color: #94a3b8; font-size: 12.5px; cursor: pointer; transition: all 0.2s; }
+  .quick-btn:hover, .quick-btn.active { background: #3b82f6; border-color: #3b82f6; color: white; }
+  .section-header { padding: 8px 16px 4px; font-size: 12px; color: #64748b; font-weight: 600; letter-spacing: 0.5px; }
+  .results { padding: 4px 0; }
+  .poi-card { padding: 10px 16px; cursor: pointer; transition: background 0.15s; border-radius: 8px; margin: 4px 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); display: flex; align-items: flex-start; gap: 10px; }
+  .poi-card:hover { background: #334155; }
+  .poi-icon { font-size: 20px; flex-shrink: 0; width: 28px; text-align: center; margin-top: 2px; }
+  .poi-body { flex: 1; min-width: 0; }
+  .poi-name { font-size: 13px; font-weight: 500; color: #f1f5f9; display: flex; align-items: center; gap: 6px; }
+  .poi-name .fav-star { cursor: pointer; font-size: 14px; opacity: 0.4; transition: opacity 0.2s; }
+  .poi-name .fav-star:hover, .poi-name .fav-star.faved { opacity: 1; color: #f59e0b; }
+  .poi-meta { font-size: 11px; color: #94a3b8; margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .poi-rating { color: #f59e0b; font-weight: 600; }
+  .poi-cost { color: #22c55e; }
+  .poi-dist { color: #60a5fa; }
+  .poi-addr { font-size: 11px; color: #64748b; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .poi-links { font-size: 11px; margin-top: 3px; display: flex; gap: 8px; }
+  .poi-links a { color: #60a5fa; text-decoration: none; opacity: 0.7; }
+  .poi-links a:hover { opacity: 1; text-decoration: underline; }
+  #map { width: 100%; height: 100%; }
+  .map-wrapper { position: relative; }
+  .info-popup { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); width: 400px; background: #1e293bee; backdrop-filter: blur(12px); border-radius: 14px; padding: 16px; z-index: 1000; box-shadow: 0 8px 32px rgba(0,0,0,0.5); display: none; border: 1px solid #334155; }
+  .info-popup.show { display: block; }
+  .info-popup .close { position: absolute; top: 8px; right: 12px; cursor: pointer; color: #94a3b8; font-size: 16px; }
+  .info-popup h3 { font-size: 15px; margin-bottom: 4px; color: #f1f5f9; padding-right: 24px; }
+  .info-popup .addr { font-size: 12px; color: #94a3b8; margin-bottom: 8px; }
+  .info-popup .stats { display: flex; gap: 16px; margin-bottom: 8px; }
+  .info-popup .stat { text-align: center; }
+  .info-popup .stat-val { font-size: 18px; font-weight: 700; }
+  .info-popup .stat-label { font-size: 10px; color: #94a3b8; }
+  .info-popup .hours { font-size: 12px; color: #a3e635; margin-top: 4px; }
+  .info-popup .tel { font-size: 12px; color: #60a5fa; margin-top: 2px; }
+  .info-popup .social-links { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .info-popup .social-links a { padding: 4px 10px; border-radius: 6px; font-size: 11px; text-decoration: none; border: 1px solid #475569; color: #e2e8f0; transition: all 0.2s; }
+  .info-popup .social-links a:hover { background: #334155; }
+  .info-popup .social-links a.xhs { border-color: #ff2442; color: #ff2442; }
+  .info-popup .social-links a.dzdp { border-color: #ff6633; color: #ff6633; }
+  .info-popup .social-links a.forum { border-color: #22c55e; color: #22c55e; }
+  .info-popup .fav-btn { margin-top: 8px; padding: 6px 14px; border-radius: 8px; border: 1px solid #475569; background: transparent; color: #f59e0b; font-size: 12px; cursor: pointer; }
+  .info-popup .fav-btn:hover { background: #334155; }
+  .info-popup .fav-btn.faved { background: #f59e0b22; border-color: #f59e0b; }
+  .loading { text-align: center; padding: 20px; color: #64748b; font-size: 13px; }
+  .empty-fav { text-align: center; padding: 24px 16px; color: #475569; font-size: 12px; line-height: 1.6; }
+  .note-box { margin: 8px 12px; padding: 8px 10px; background: #1e293b; border: 1px solid #334155; border-radius: 8px; font-size: 11px; color: #94a3b8; line-height: 1.5; }
+  .note-box a { color: #60a5fa; }
+  .forum-card { padding: 10px 16px; border-radius: 8px; margin: 4px 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); cursor: pointer; transition: background 0.15s; }
+  .forum-card:hover { background: #334155; }
+  .forum-title { font-size: 13px; font-weight: 500; color: #f1f5f9; line-height: 1.4; }
+  .forum-meta { font-size: 11px; color: #64748b; margin-top: 4px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .forum-tag { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; background: #334155; color: #94a3b8; }
+  .forum-tag.hot { background: #f43f5e22; color: #f43f5e; }
+  .campus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px; }
+  .campus-tile { padding: 12px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; text-align: center; cursor: pointer; transition: all 0.2s; }
+  .campus-tile:hover { border-color: #3b82f6; background: #1e293b; }
+  .campus-tile .tile-icon { font-size: 24px; margin-bottom: 4px; }
+  .campus-tile .tile-name { font-size: 12px; color: #e2e8f0; font-weight: 500; }
+  .campus-tile .tile-sub { font-size: 10px; color: #64748b; margin-top: 2px; }
+  .campus-full-btn { display: block; margin: 8px 12px; padding: 10px; text-align: center; border: 1px dashed #475569; border-radius: 10px; color: #60a5fa; text-decoration: none; font-size: 13px; transition: all 0.2s; }
+  .campus-full-btn:hover { background: #334155; border-style: solid; }
+  /* === 资讯 tab === */
+  .news-card { padding: 10px 16px; border-radius: 8px; margin: 4px 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); cursor: pointer; transition: background 0.15s; }
+  .news-card:hover { background: #334155; }
+  .news-card-row { display: flex; gap: 10px; align-items: flex-start; }
+  .news-card-body { flex: 1; min-width: 0; }
+  .news-cover { width: 72px; height: 72px; border-radius: 8px; object-fit: cover; flex-shrink: 0; background: #334155; }
+  .news-title { font-size: 13px; font-weight: 600; color: #f1f5f9; line-height: 1.4; }
+  .news-meta { font-size: 11px; color: #64748b; margin-top: 4px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  /* Alpha Lab 详情展开 */
+  .alpha-detail-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 2000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+  .alpha-detail-panel { background: #1e293b; border-radius: 14px; max-width: 560px; width: 92vw; max-height: 85vh; overflow-y: auto; border: 1px solid #334155; box-shadow: 0 12px 48px rgba(0,0,0,0.6); }
+  .alpha-detail-panel .adp-header { position: relative; }
+  .alpha-detail-panel .adp-cover { width: 100%; max-height: 300px; object-fit: cover; border-radius: 14px 14px 0 0; display: block; }
+  .alpha-detail-panel .adp-close { position: absolute; top: 10px; right: 14px; width: 30px; height: 30px; border-radius: 50%; background: rgba(0,0,0,0.6); color: white; border: none; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+  .alpha-detail-panel .adp-close:hover { background: rgba(0,0,0,0.8); }
+  .alpha-detail-panel .adp-content { padding: 16px; }
+  .alpha-detail-panel .adp-title { font-size: 16px; font-weight: 700; color: #f1f5f9; line-height: 1.4; margin-bottom: 8px; }
+  .alpha-detail-panel .adp-meta { font-size: 11px; color: #64748b; margin-bottom: 12px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .alpha-detail-panel .adp-event { padding: 10px 12px; background: #0f172a; border-radius: 8px; margin-bottom: 12px; font-size: 12px; line-height: 1.7; color: #94a3b8; }
+  .alpha-detail-panel .adp-event b { color: #e2e8f0; }
+  .alpha-detail-panel .adp-event .ev-highlight { color: #60a5fa; font-weight: 600; }
+  .alpha-detail-panel .adp-desc { font-size: 13px; color: #cbd5e1; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+  .alpha-detail-panel .adp-footer { padding: 12px 16px; border-top: 1px solid #334155; display: flex; gap: 8px; justify-content: flex-end; }
+  .alpha-detail-panel .adp-footer a { padding: 6px 14px; border-radius: 8px; font-size: 12px; text-decoration: none; border: 1px solid #475569; color: #e2e8f0; transition: all 0.2s; }
+  .alpha-detail-panel .adp-footer a:hover { background: #334155; }
+  .alpha-detail-panel .adp-footer a.xhs-link { border-color: #ff2442; color: #ff2442; }
+  .news-tag { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 10px; background: #334155; color: #94a3b8; }
+  .news-tag.academic { background: #3b82f622; color: #60a5fa; }
+  .news-login-hint { text-align: center; padding: 24px 16px; color: #f59e0b; font-size: 13px; line-height: 1.8; }
+  .news-login-hint a { color: #60a5fa; text-decoration: underline; }
+  .news-load-more { display: block; width: calc(100% - 24px); margin: 8px 12px; padding: 8px; text-align: center; border: 1px dashed #475569; border-radius: 8px; background: transparent; color: #60a5fa; font-size: 12px; cursor: pointer; transition: all 0.2s; }
+  .news-load-more:hover { background: #334155; border-style: solid; }
+  .hearsay-promo { margin: 8px 12px; padding: 10px 12px; background: #0f172a; border: 1px solid #334155; border-radius: 10px; font-size: 12px; color: #94a3b8; line-height: 1.5; display: flex; align-items: center; gap: 8px; }
+  .hearsay-promo a { color: #22c55e; text-decoration: none; font-weight: 500; }
+  .hearsay-promo a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span style="font-size:22px">🗺️</span>
+  <select id="campusSelect" onchange="switchCampus(this.value)" style="background:#1e293b;color:#e2e8f0;border:1px solid #475569;border-radius:8px;padding:4px 8px;font-size:13px;cursor:pointer">
+    <option value="gaoxin" selected>🏛️ 高新校区</option>
+    <option value="east">🏛️ 东校区</option>
+    <option value="west">🏛️ 西校区</option>
+    <option value="middle">🏛️ 中校区</option>
+  </select>
+  <span class="tag">⚡ alpha</span>
+  <a class="home-btn" href="https://map.ustc.edu.cn/" target="_blank">🏛️ 3D校园</a>
+  <button class="home-btn" onclick="goHome()">🏠 回到校区</button>
+</div>
+
+<div class="container">
+  <div class="sidebar">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="🔍 搜周边(奶茶、火锅、健身...)" />
+    </div>
+    <div class="tabs">
+      <div class="tab active" data-tab="nearby" onclick="switchTab('nearby')">🔍 周边</div>
+      <div class="tab" data-tab="campus" onclick="switchTab('campus')">🏫 校内</div>
+      <div class="tab" data-tab="forum" onclick="switchTab('forum')">🍵 茶馆</div>
+      <div class="tab" data-tab="news" onclick="switchTab('news')">📢 资讯</div>
+      <div class="tab" data-tab="favs" onclick="switchTab('favs')">⭐ 收藏</div>
+    </div>
+
+    <div id="tab-nearby" class="tab-content">
+      <div class="quick-btns">
+        <button class="quick-btn" data-type="050000">🍜 美食</button>
+        <button class="quick-btn" data-kw="奶茶">🧋 奶茶</button>
+        <button class="quick-btn" data-kw="咖啡">☕ 咖啡</button>
+        <button class="quick-btn" data-kw="火锅">🍲 火锅</button>
+        <button class="quick-btn" data-type="060400">🛒 超市</button>
+        <button class="quick-btn" data-type="090000">🏥 医疗</button>
+        <button class="quick-btn" data-type="160000">🏦 ATM</button>
+        <button class="quick-btn" data-type="150000">🚌 公交</button>
+        <button class="quick-btn" data-type="141200">🎬 电影</button>
+        <button class="quick-btn" data-kw="健身">💪 健身</button>
+        <button class="quick-btn" data-kw="KTV">🎤 KTV</button>
+        <button class="quick-btn" data-kw="理发">💇 理发</button>
+      </div>
+      <div class="results" id="results">
+        <div class="loading">👆 点分类或搜索关键词查周边</div>
+      </div>
+    </div>
+
+    <div id="tab-campus" class="tab-content" style="display:none">
+      <div class="campus-grid" id="campusGrid"></div>
+      <a class="campus-full-btn" href="https://map.ustc.edu.cn/" target="_blank">🏛️ 进入 3D 虚拟校园地图 →</a>
+      <div class="note-box">校内详细楼栋/教室/AED/校车请使用官方3D地图。<br>此页面专注<b>周边生活</b>与<b>社交信息</b>。</div>
+    </div>
+
+    <div id="tab-forum" class="tab-content" style="display:none">
+      <div class="quick-btns" id="forumBtns">
+        <button class="forum-btn quick-btn active" data-tag="campus">🏫 校园生活</button>
+        <button class="forum-btn quick-btn" data-tag="guide">📝 攻略</button>
+        <button class="forum-btn quick-btn" data-tag="help">🙋 求助</button>
+        <button class="forum-btn quick-btn" data-tag="career">📈 生涯</button>
+        <button class="forum-btn quick-btn" data-tag="activities">📢 动态</button>
+        <button class="forum-btn quick-btn" data-tag="academic">📚 学术</button>
+        <button class="forum-btn quick-btn" data-tag="technology">💻 技术</button>
+        <button class="forum-btn quick-btn" data-tag="hearsay">📣 小道消息</button>
+      </div>
+      <div id="forumResults">
+        <div class="loading">加载中...</div>
+      </div>
+      <div class="hearsay-promo">📣 关注「蜗壳小道消息」公众号(微信搜索 <a href="https://ustcforum.com/u/ustc_hearsay" target="_blank">USTC小道消息</a>)获取更多校园资讯</div>
+    </div>
+
+    <div id="tab-news" class="tab-content" style="display:none">
+      <div class="quick-btns" id="newsBtns">
+        <button class="news-btn quick-btn active" data-ntype="notice">📋 通知公告</button>
+        <button class="news-btn quick-btn" data-ntype="academic">🎓 学术报告</button>
+        <button class="news-btn quick-btn" data-ntype="alphalab">⚡ Alpha Lab</button>
+        <button class="news-btn quick-btn" data-ntype="discover">📱 发现</button>
+      </div>
+      <div id="newsResults">
+        <div class="loading">加载中...</div>
+      </div>
+    </div>
+
+    <div id="tab-favs" class="tab-content" style="display:none">
+      <div id="favsList"></div>
+    </div>
+  </div>
+
+  <div class="map-wrapper">
+    <div id="map"></div>
+    <div class="info-popup" id="infoPopup">
+      <span class="close" onclick="closePopup()">✕</span>
+      <h3 id="popName"></h3>
+      <div class="addr" id="popAddr"></div>
+      <div class="stats" id="popStats"></div>
+      <div class="hours" id="popHours"></div>
+      <div class="tel" id="popTel"></div>
+      <div class="social-links" id="popLinks"></div>
+      <button class="fav-btn" id="popFav" onclick="toggleFavFromPopup()">⭐ 收藏</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const AMAP_KEY = '7d03d03ab0e51f363eb61612dc0a5de3';
+// 茶馆数据内联(自包含,无需外部 JSON)- 数据快照 2026-03-26
+const FORUM_DATA = {"campus":[{"id":"4216","t":"中科大校园网开机自动连接程序分享","a":"panda-sleeping","r":10,"v":193,"ts":"2026-03-25T06:37:55+00:00"},{"id":"4225","t":"请问校友能返校参观吗","a":"Nightmare","r":2,"v":64,"ts":"2026-03-24T07:04:59+00:00"},{"id":"4223","t":"拖延症","a":"木头","r":0,"v":68,"ts":"2026-03-23T06:53:19+00:00"},{"id":"4202","t":"感觉人生失去意义了","a":"cheeseburger","r":9,"v":287,"ts":"2026-03-13T10:10:10+00:00"},{"id":"3216","t":"健身打卡帖","a":"南七第一深情","r":137,"v":8349,"ts":"2026-03-13T07:49:35+00:00"},{"id":"1758","t":"回顾我的本科生涯","a":"LubenDias","r":86,"v":15796,"ts":"2026-03-12T11:52:02+00:00"},{"id":"894","t":"来讨论一下《上海交大生存指南》吧!","a":"ice","r":22,"v":6651,"ts":"2026-03-12T04:13:35+00:00"},{"id":"4145","t":"吐槽宿舍楼下的友宝售货机","a":"SHANA","r":3,"v":281,"ts":"2026-03-07T18:21:31+00:00"},{"id":"4183","t":"东区黑心书店是什么","a":"木头","r":1,"v":141,"ts":"2026-03-01T11:03:04+00:00"},{"id":"4161","t":"被骗400块的经历","a":"加个小鸡腿","r":11,"v":331,"ts":"2026-02-09T02:37:05+00:00"},{"id":"4154","t":"【转】在中国科学技术大学 (USTC) 就读是怎样一番体验？","a":"Hhhhasdf","r":13,"v":398,"ts":"2026-02-03T08:17:02+00:00"},{"id":"1638","t":"开帖详述科男在ustc找女友的天然战略困局以及破局方法","a":"Chaser","r":57,"v":13849,"ts":"2026-01-11T11:14:01+00:00"},{"id":"4116","t":"成长之路","a":"vicerebel","r":3,"v":303,"ts":"2025-12-26T14:27:30+00:00"},{"id":"4094","t":"调研大学生使用小鲨鱼表情包\“老师 菜菜 捞捞 呜呜\"","a":"C00C10C11","r":5,"v":351,"ts":"2025-12-16T10:49:38+00:00"},{"id":"4105","t":"学校跑腿业务需求调查","a":"7kmRunner","r":1,"v":237,"ts":"2025-12-15T13:19:54+00:00"}],"guide":[{"id":"2317","t":"洗发水分享","a":"金寨猛男","r":15,"v":3612,"ts":"2023-11-04T16:03:30+00:00"},{"id":"457","t":"中科大网络资源一览","a":"ZeQueen","r":8,"v":20081,"ts":"2023-06-29T00:31:03+00:00"},{"id":"1729","t":"蹲蹲东区附近好吃的菜馆~","a":"金寨猛男","r":9,"v":3299,"ts":"2023-06-19T00:14:06+00:00"},{"id":"48","t":"关于转专业与强基","a":"报考Bot","r":16,"v":5439,"ts":"2022-11-10T12:07:40+00:00"},{"id":"499","t":"[校园攻略]转专业指南","a":"茶馆板娘","r":14,"v":7734,"ts":"2021-12-30T17:42:10+00:00"},{"id":"405","t":"[校园攻略]科大生活常用攻略！","a":"茶馆板娘","r":30,"v":36093,"ts":"2021-11-12T14:21:57+00:00"},{"id":"439","t":"[校园攻略]科大学习指南","a":"茶馆板娘","r":2,"v":11106,"ts":"2021-09-05T05:29:02+00:00"},{"id":"480","t":"校规考试/二课指南考试题库（往年）","a":"anon","r":5,"v":4048,"ts":"2021-08-29T16:33:22+00:00"},{"id":"391","t":"入学考试（开学考试）那点事","a":"super-slidable","r":7,"v":5482,"ts":"2021-07-29T06:35:37+00:00"},{"id":"316","t":"关于中区宿舍","a":"报考Bot","r":3,"v":2391,"ts":"2021-07-06T12:39:15+00:00"}],"help":[{"id":"2596","t":"求问(基础)数学目前出国难度","a":"qwqqwq","r":12,"v":2686,"ts":"2026-03-25T09:23:10+00:00"},{"id":"4222","t":"求助：保外只有GPA怎么做","a":"zbs11","r":8,"v":154,"ts":"2026-03-25T06:09:58+00:00"},{"id":"4224","t":"科大邮箱的office 365 账户被ban","a":"Albertt","r":2,"v":74,"ts":"2026-03-24T11:27:20+00:00"},{"id":"4225","t":"请问校友能返校参观吗","a":"Nightmare","r":2,"v":64,"ts":"2026-03-24T07:04:59+00:00"},{"id":"4218","t":"本校物理考研 想问下光学方向有没有导师推荐","a":"10tou","r":10,"v":214,"ts":"2026-03-22T17:13:36+00:00"},{"id":"4220","t":"UCI3+2求助","a":"wxwx","r":1,"v":86,"ts":"2026-03-22T14:28:29+00:00"},{"id":"4212","t":"绩点下降，学习兴趣大幅下降。不知怎么办","a":"Hello-Kitty","r":8,"v":268,"ts":"2026-03-20T18:03:26+00:00"},{"id":"4210","t":"就业 or 读书，想听听大家的看法","a":"7kmRunner","r":20,"v":329,"ts":"2026-03-19T03:51:20+00:00"},{"id":"4168","t":"大三网安鼠鼠保研问题","a":"dlzgwer","r":7,"v":299,"ts":"2026-03-18T07:14:04+00:00"},{"id":"4164","t":"校友没有校内VPN，还能逛瀚海星云吗？","a":"zjttwjh","r":4,"v":364,"ts":"2026-03-16T17:43:02+00:00"},{"id":"4207","t":"专业咨询","a":"orear","r":2,"v":120,"ts":"2026-03-10T11:14:14+00:00"},{"id":"4206","t":"本人25化院想转专业到信院想咨询一下","a":"Phelna","r":2,"v":132,"ts":"2026-03-10T09:59:21+00:00"},{"id":"4194","t":"求问大三上修体育的可能性","a":"wo_chan","r":7,"v":191,"ts":"2026-03-10T09:28:19+00:00"},{"id":"4190","t":"想了解一下ai/ds院相关情况","a":"lovegood","r":3,"v":173,"ts":"2026-03-10T09:14:18+00:00"},{"id":"4201","t":"科软直属的大组实验室有哪些呀？(除了汪炀的数据智能实验室外","a":"Momo","r":0,"v":109,"ts":"2026-03-07T11:08:27+00:00"}],"career":[{"id":"3743","t":"推动科大GPA改制！让我们一起努力","a":"Platinum","r":91,"v":5876,"ts":"2026-03-26T05:40:36+00:00"},{"id":"4173","t":"接phd offer前需要问清楚哪些事情","a":"恋曲1980","r":11,"v":434,"ts":"2026-03-23T14:50:35+00:00"},{"id":"4220","t":"UCI3+2求助","a":"wxwx","r":1,"v":86,"ts":"2026-03-22T14:28:29+00:00"},{"id":"4143","t":"数院大二中登选课求助","a":"_Kylin_","r":1,"v":219,"ts":"2026-03-21T14:38:23+00:00"},{"id":"4210","t":"就业 or 读书，想听听大家的看法","a":"7kmRunner","r":20,"v":329,"ts":"2026-03-19T03:51:20+00:00"},{"id":"4168","t":"大三网安鼠鼠保研问题","a":"dlzgwer","r":7,"v":299,"ts":"2026-03-18T07:14:04+00:00"},{"id":"4211","t":"保研时间提前会对保研名额有什么影响？","a":"木头","r":10,"v":208,"ts":"2026-03-16T15:32:34+00:00"},{"id":"4208","t":"随着AI的发展，基础科学会成为旧时代的残党吗？","a":"恋曲1980","r":3,"v":200,"ts":"2026-03-11T06:00:00+00:00"},{"id":"4169","t":"cs大三求助","a":"CrazyAiden","r":5,"v":299,"ts":"2026-03-09T21:58:21+00:00"},{"id":"4201","t":"科软直属的大组实验室有哪些呀？(除了汪炀的数据智能实验室外","a":"Momo","r":0,"v":109,"ts":"2026-03-07T11:08:27+00:00"},{"id":"4197","t":"听说生医部朱书老师组的博士都是八年毕业","a":"jojo","r":1,"v":154,"ts":"2026-03-06T07:44:44+00:00"},{"id":"4199","t":"专项计划","a":"woshixj","r":0,"v":102,"ts":"2026-03-06T04:40:26+00:00"},{"id":"4191","t":"六系大三鼠鼠保研求助","a":"x123","r":8,"v":224,"ts":"2026-03-05T08:14:32+00:00"},{"id":"4192","t":"秋招offer选择","a":"aidehuazi","r":2,"v":164,"ts":"2026-03-03T17:42:36+00:00"},{"id":"4189","t":"【招聘AI音乐/音效算法/鸿蒙系统软件开发 实习生/27应届生】","a":"zyzhangOMG","r":0,"v":130,"ts":"2026-03-02T15:22:07+00:00"}],"activities":[{"id":"3743","t":"推动科大GPA改制！让我们一起努力","a":"Platinum","r":91,"v":5876,"ts":"2026-03-26T05:40:36+00:00"},{"id":"3746","t":"科大成长助手需求调研＆信息差吐槽贴","a":"Alpha-Agent","r":3,"v":1172,"ts":"2026-02-24T02:16:13+00:00"},{"id":"3883","t":"科大雇员诺贝尔物理学奖得主已经谣言","a":"zuzhengshi","r":0,"v":560,"ts":"2025-06-22T10:11:56+00:00"},{"id":"2318","t":"提醒 ｜ 立刻备份使用学校邮箱的 Onedrive","a":"TianKai Ma","r":10,"v":5961,"ts":"2025-06-12T03:06:50+00:00"},{"id":"3789","t":"学代会提案征集","a":"Q","r":5,"v":1145,"ts":"2025-06-01T02:46:48+00:00"},{"id":"3786","t":"2025学研代表大会，关于GPA改制的提议，附议人信息收集","a":"Platinum","r":13,"v":908,"ts":"2025-05-07T16:29:08+00:00"},{"id":"3550","t":"出课，急需选课，加权平均分没到75","a":"leo12138","r":0,"v":980,"ts":"2025-02-09T05:52:48+00:00"},{"id":"3460","t":"科大小米俱乐部招人啦，期待各位的加入，简介如图","a":"Joe","r":0,"v":643,"ts":"2024-12-29T17:23:13+00:00"},{"id":"3452","t":"宣传一波魔术之夜","a":"FanFabe","r":6,"v":1029,"ts":"2024-12-27T20:21:30+00:00"},{"id":"2719","t":"星星之火，可以燎原！对GPA制度进行提议！","a":"Platinum","r":94,"v":12515,"ts":"2024-12-11T04:57:32+00:00"},{"id":"3188","t":"校学生模拟政协提案大赛","a":"匿名","r":1,"v":716,"ts":"2024-09-26T08:55:44+00:00"},{"id":"3094","t":"中国科大模拟政协协会","a":"匿名","r":3,"v":1131,"ts":"2024-09-04T10:17:45+00:00"},{"id":"2824","t":"突然意识到自己是外i内e，想搞一点局","a":"ascii","r":27,"v":5389,"ts":"2024-08-28T13:54:21+00:00"},{"id":"2996","t":"医学院为什么不单独招生？","a":"Cippepei","r":3,"v":1144,"ts":"2024-08-06T18:56:29+00:00"},{"id":"2976","t":"旗帜鲜明地反对中科大卡学生转专业","a":"Cippepei","r":36,"v":7460,"ts":"2024-08-06T09:13:55+00:00"}],"academic":[{"id":"4160","t":"专开个新帖，会有人来写一些给科大男生的社交和情感建议吗？","a":"Hhhhasdf","r":6,"v":337,"ts":"2026-03-26T05:38:11+00:00"},{"id":"4190","t":"想了解一下ai/ds院相关情况","a":"lovegood","r":3,"v":173,"ts":"2026-03-10T09:14:18+00:00"},{"id":"4158","t":"有没有了解管院李好老师的","a":"sjxinustc","r":0,"v":161,"ts":"2026-01-30T13:56:01+00:00"},{"id":"4134","t":"求求高等量子力学复习资料！","a":"ZephyrAster","r":5,"v":178,"ts":"2026-01-12T18:04:10+00:00"},{"id":"4126","t":"求《非线性光学》复习资料！网上找不到往年试题呀😇","a":"ZephyrAster","r":1,"v":163,"ts":"2026-01-09T12:53:55+00:00"},{"id":"4123","t":"求求《高等线性代数》这门课的复习资料","a":"ZephyrAster","r":3,"v":183,"ts":"2026-01-07T08:30:31+00:00"},{"id":"3703","t":"点火燧石的评课社区评课辑录/选课咨询台","a":"Flint_Xysovid","r":20,"v":3978,"ts":"2026-01-04T06:38:40+00:00"},{"id":"3820","t":"地空24届大一转专业的迷茫","a":"Helel_star","r":7,"v":1457,"ts":"2025-12-29T09:53:18+00:00"},{"id":"4112","t":"求GPU并行计算课程群","a":"sadj","r":2,"v":249,"ts":"2025-12-27T17:04:42+00:00"},{"id":"4001","t":"科大化学，生物实验方向，有些老师和博士生坑起本科生来真狠","a":"橙七","r":13,"v":1104,"ts":"2025-11-20T09:56:42+00:00"},{"id":"4065","t":"十五五量子相关规划","a":"Lupin","r":2,"v":367,"ts":"2025-11-03T17:08:54+00:00"},{"id":"4061","t":"讨论点正经事 比如设立中国科学技术大学医学奖","a":"zuzhengshi","r":1,"v":268,"ts":"2025-10-28T21:20:39+00:00"},{"id":"4059","t":"感觉自己花了很久还是没领悟怎么做科研","a":"wanderer","r":11,"v":573,"ts":"2025-10-26T17:52:52+00:00"},{"id":"4031","t":"急求环境学院刘军武老师风评","a":"Kosmosbild","r":2,"v":377,"ts":"2025-09-24T20:21:05+00:00"},{"id":"3879","t":"Nature Physics投稿体验","a":"恋曲1980","r":8,"v":2147,"ts":"2025-09-20T01:39:58+00:00"}],"technology":[{"id":"4216","t":"中科大校园网开机自动连接程序分享","a":"panda-sleeping","r":10,"v":193,"ts":"2026-03-25T06:37:55+00:00"},{"id":"4224","t":"科大邮箱的office 365 账户被ban","a":"Albertt","r":2,"v":74,"ts":"2026-03-24T11:27:20+00:00"},{"id":"3746","t":"科大成长助手需求调研＆信息差吐槽贴","a":"Alpha-Agent","r":3,"v":1172,"ts":"2026-02-24T02:16:13+00:00"},{"id":"4110","t":"求助｜使用非校园网无法连接组内服务器","a":"coca-cola","r":6,"v":332,"ts":"2025-12-29T19:53:44+00:00"},{"id":"3863","t":"记录一下腾讯的kpi面","a":"000000","r":21,"v":2006,"ts":"2025-12-11T15:39:20+00:00"},{"id":"4060","t":"改了个科大主题的个人简历模板，欢迎使用","a":"SoftMax","r":2,"v":445,"ts":"2025-11-01T17:45:02+00:00"},{"id":"3987","t":"科大正版Office安装","a":"Iridescent","r":3,"v":662,"ts":"2025-09-11T11:34:10+00:00"},{"id":"3816","t":"USTC在ML时代，AI/LLM时代是不是已经落后了","a":"没有感情的猪头","r":20,"v":3363,"ts":"2025-08-29T04:35:05+00:00"},{"id":"3959","t":"校友们，楼主该怎么办","a":"000000","r":10,"v":1193,"ts":"2025-08-16T16:02:49+00:00"},{"id":"3885","t":"华子的hr带着一个部门主管来call我了，怎么看这个方向","a":"000000","r":10,"v":1674,"ts":"2025-07-09T06:39:59+00:00"},{"id":"3902","t":"MPD：古典音乐爱好者的完美音乐服务器解决方案","a":"火星人","r":5,"v":922,"ts":"2025-07-03T22:44:55+00:00"},{"id":"3877","t":"脑机接口","a":"crx7999497","r":2,"v":731,"ts":"2025-06-19T15:47:57+00:00"},{"id":"3800","t":"FTIR温室气体浓度反演算法调参","a":"CAM-1901","r":1,"v":809,"ts":"2025-05-13T08:01:57+00:00"},{"id":"3774","t":"记一次字节C++客户端面试凉经","a":"000000","r":11,"v":1868,"ts":"2025-05-06T10:05:22+00:00"},{"id":"3635","t":"关于软件工程的疑问","a":"SpaceWhite","r":3,"v":1137,"ts":"2025-04-09T12:05:00+00:00"}],
+// 蜗壳小道消息（ustc_hearsay）— 数据快照自 Flarum API 2026-03-26
+// 该用户在南七茶馆发帖较少，数据为静态内联；未来可动态拉取：
+// GET https://ustcforum.com/api/discussions?filter[author]=ustc_hearsay&sort=-createdAt
+"hearsay":[{"id":"534","t":"在核酸检测现场工作","a":"ustc_hearsay","r":2,"v":825,"ts":"2021-09-16T07:00:01+00:00"},{"id":"489","t":"科大恢复托福GRE考点啦","a":"ustc_hearsay","r":7,"v":1045,"ts":"2021-08-31T16:06:23+00:00"}]};
+// 资讯数据内联（自包含）— 数据快照 2026-03-26
+// 数据来源：i.ustc.edu.cn/site/news-center-newslist (type=2 通知公告, type=3 学术报告)
+// 定期通过 Cookie 认证抓取更新，无需用户登录
+const NEWS_DATA = {"notice": [{"title": "关于暂停财务综合信息平台服务的通知", "date": "2026-03-26", "tags": ["通知公告"]}, {"title": "关于纪杰参与2025年度湖北省科学技术奖项目的公示", "date": "2026-03-26", "tags": ["通知公告"]}, {"title": "关于2026年财政指标额度下达的通知", "date": "2026-03-25", "tags": ["通知公告"]}, {"title": "丝路遗珍 西夏梵韵——瓜州东千佛洞壁画展", "date": "2026-03-25", "tags": ["通知公告"]}, {"title": "关于《丝路遗珍 西夏梵韵——瓜州东千佛洞壁画展》开展通知", "date": "2026-03-25", "tags": ["通知公告"]}, {"title": "关于举办供应链标准化专题研讨会的通知", "date": "2026-03-25", "tags": ["通知公告"]}, {"title": "2026\"永远科大人\"See You毕业纪念系列活动项目负责人统一招募通知", "date": "2026-03-24", "tags": ["通知公告"]}, {"title": "关于科学智能物质创制中心徽标征集的通知", "date": "2026-03-24", "tags": ["通知公告"]}, {"title": "关于举办第十九期\"瀚海银龄大讲堂\"——睡眠障碍治疗的通知", "date": "2026-03-24", "tags": ["通知公告"]}, {"title": "新域名启用公告", "date": "2026-03-24", "tags": ["通知公告"]}, {"title": "四川省绵阳市军队单位宣讲招聘", "date": "2026-03-23", "tags": ["通知公告"]}, {"title": "2026届中国科学技术大学优秀毕业生候选人公示", "date": "2026-03-23", "tags": ["通知公告"]}, {"title": "中国科学技术大学2026年度\"领创计划\"招募通知", "date": "2026-03-21", "tags": ["通知公告"]}, {"title": "关于推荐2026年度华医科技奖项目的公示", "date": "2026-03-20", "tags": ["通知公告"]}, {"title": "关于2026年中国科学技术大学青年马克思主义者培养工程暨\"六有\"大学生\"青马计划\"班入选名单的公示", "date": "2026-03-20", "tags": ["通知公告"]}], "academic": [{"title": "管理学院学术报告会（26040号）", "date": "2026-03-26", "tags": ["管理科学"]}, {"title": "4-16【Xu Wang】Ross-Witt Nyström correspondence and Ohsawa-Takegoshi extension", "date": "2026-03-26", "tags": ["数学"]}, {"title": "4-16【王煦】Ross-Witt Nyström correspondence and Ohsawa-Takegoshi extension", "date": "2026-03-26", "tags": ["数学"]}, {"title": "菁致青年讲座-固相解离驱动的卤化物固态电解质工程", "date": "2026-03-26", "tags": ["化学与材料科学", "能源科学与技术"]}, {"title": "When Search Starts with Generative AI: Content Licensing and Publisher Quality", "date": "2026-03-25", "tags": ["管理科学", "科技商务管理"]}, {"title": "2026.04.03 朱景德教授学术报告会", "date": "2026-03-25", "tags": ["生命科学", "医学"]}, {"title": "菁致讲坛-Common challenges in electrochemistry: from the production of green hydrogen and ammonia to batteries and back", "date": "2026-03-25", "tags": ["化学与材料科学", "能源科学与技术"]}, {"title": "【03月25日】几何分析联合讨论班 第十三期", "date": "2026-03-25", "tags": ["数学", "物理学"]}, {"title": "学术报告会 | 波动性与流动性冲击：价格发现与相对价值的跨资产分析", "date": "2026-03-25", "tags": ["管理科学"]}, {"title": "学术报告会 | 高频金融中基于重尾耦合的爆炸性漂移统计推断", "date": "2026-03-25", "tags": ["统计学"]}, {"title": "学术报告会 | 泊松因子模型的数据稀疏化及其应用", "date": "2026-03-25", "tags": ["统计学"]}, {"title": "学术报告会 | 数据融合和存在未观测混杂的因果推断", "date": "2026-03-25", "tags": ["统计学", "人工智能与数据科学"]}, {"title": "学术报告会 | 基于高维事件序列的知识图谱统计推断", "date": "2026-03-25", "tags": ["统计学", "人工智能与数据科学"]}, {"title": "2026.03.27 华南师范大学束文圣教授学术报告会", "date": "2026-03-24", "tags": ["生命科学"]}, {"title": "中科大地球与行星物理学术报告通知（202605期） - 吴锐", "date": "2026-03-24", "tags": ["地球与行星科学"]}], "snapshot": "2026-03-27"};
+const CAMPUS_CENTER = [31.819, 117.129];
+const DORM = [31.8175, 117.1245];
+const CAMPUS_LOC = '117.129,31.819';
+function getCampusLoc(){const sel=document.getElementById('campusSelect');const c=CAMPUS_COORDS[sel?sel.value:'gaoxin']||CAMPUS_COORDS.gaoxin;return c.center[1]+','+c.center[0];}
+
+const map = L.map('map', { zoomControl: false }).setView(CAMPUS_CENTER, 15);
+L.control.zoom({ position: 'topright' }).addTo(map);
+L.tileLayer('https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+  subdomains: '1234', attribution: '© 高德地图', maxZoom: 19
+}).addTo(map);
+
+// 宿舍标记
+L.circleMarker(DORM,{radius:10,color:'#f43f5e',fillColor:'#f43f5e',fillOpacity:1,weight:2}).addTo(map)
+ .bindTooltip('🏠 G002-417',{permanent:true,direction:'top'});
+
+// === 校内关键地点 ===
+const campusKeyPOIs = [
+  { name:"图书教育中心", icon:"📖", sub:"图书馆+教室", lat:31.818462, lng:117.129496 },
+  { name:"学生食堂", icon:"🍽️", sub:"主食堂", lat:31.817562, lng:117.127678 },
+  { name:"信智大楼", icon:"🧠", sub:"信息与智能学部", lat:31.819200, lng:117.132100 },
+  { name:"1号科学楼", icon:"🔬", sub:"A/B/C区", lat:31.818200, lng:117.131500 },
+  { name:"2号科学楼", icon:"🔬", sub:"A/B/C区", lat:31.817300, lng:117.131000 },
+  { name:"3号科学楼", icon:"🔬", sub:"詹天佑路旁", lat:31.816497, lng:117.130702 },
+  { name:"体育馆", icon:"🏸", sub:"室内运动", lat:31.819729, lng:117.127408 },
+  { name:"体育场", icon:"🏟️", sub:"跑道+足球", lat:31.819612, lng:117.126137 },
+  { name:"师生活动中心", icon:"🏪", sub:"超市·餐饮", lat:31.816695, lng:117.128966 },
+  { name:"行政服务中心", icon:"🏢", sub:"行政办公", lat:31.819864, lng:117.131004 },
+  { name:"教工食堂", icon:"🍽️", sub:"近北门", lat:31.820200, lng:117.125500 },
+  { name:"南门", icon:"🚪", sub:"复兴路·主入口", lat:31.815400, lng:117.129300 },
+];
+// campusKeyPOIs 圆点已移除，坐标保留供距离计算用
+
+// === Alpha Lab 事件地图标记 ===
+let eventMarkers = [];
+function renderEventMarkers() {
+  eventMarkers.forEach(m => map.removeLayer(m));
+  eventMarkers = [];
+  const items = (window._alphaLabItems || []).filter(it => it.eventLat && it.eventLng);
+  items.forEach(it => {
+    const coverSrc = it.coverLocal || (it.cover ? it.cover.replace('http://','https://') : '');
+    const thumbHtml = coverSrc
+      ? `<img src="${coverSrc}" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4);display:block" onerror="this.style.display='none'">`
+      : `<div style="width:48px;height:48px;border-radius:6px;background:#f59e0b;display:flex;align-items:center;justify-content:center;font-size:20px;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4)">⚡</div>`;
+    const labelHtml = `<div style="max-width:120px;font-size:10px;font-weight:600;color:#f1f5f9;background:#1e293bee;padding:3px 6px;border-radius:4px;margin-top:4px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;backdrop-filter:blur(4px)">${it.title.slice(0,15)}${it.title.length>15?'…':''}</div>`;
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.2s" onmouseenter="this.style.transform='scale(1.1)'" onmouseleave="this.style.transform='scale(1)'">${thumbHtml}${labelHtml}</div>`,
+      iconSize: null, iconAnchor: [28, 60]
+    });
+    const m = L.marker([it.eventLat, it.eventLng], { icon }).addTo(map);
+    m.on('click', () => showAlphaDetail(it));
+    eventMarkers.push(m);
+  });
+}
+
+// === Util ===
+function dist(a,b){
+  const R=6371000,dLat=(b[0]-a[0])*Math.PI/180,dLng=(b[1]-a[1])*Math.PI/180;
+  const x=Math.sin(dLat/2)**2+Math.cos(a[0]*Math.PI/180)*Math.cos(b[0]*Math.PI/180)*Math.sin(dLng/2)**2;
+  const d=R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+  return d<1000?`${Math.round(d)}m`:`${(d/1000).toFixed(1)}km`;
+}
+function esc(s){ return s.replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+// === Favorites ===
+function getFavs(){try{return JSON.parse(localStorage.getItem('ustc-gx-favs')||'[]');}catch{return[];}}
+function saveFavs(f){localStorage.setItem('ustc-gx-favs',JSON.stringify(f));}
+function isFaved(n){return getFavs().some(f=>f.name===n);}
+function addFav(p){const f=getFavs();if(!f.some(x=>x.name===p.name)){f.unshift(p);saveFavs(f);}}
+function removeFav(n){saveFavs(getFavs().filter(f=>f.name!==n));}
+
+// === Alpha Lab Favorites ===
+function getAlphaFavs(){try{return JSON.parse(localStorage.getItem('ustc-alpha-favs')||'[]');}catch{return[];}}
+function saveAlphaFavs(f){localStorage.setItem('ustc-alpha-favs',JSON.stringify(f));}
+function isAlphaFaved(id){return getAlphaFavs().some(f=>f.id===id);}
+function toggleAlphaFav(id){
+  const favs=getAlphaFavs();
+  const idx=favs.findIndex(f=>f.id===id);
+  if(idx>=0){favs.splice(idx,1);}
+  else{
+    const item=(window._alphaLabItems||[]).find(x=>x.id===id);
+    if(item)favs.unshift({id:item.id,title:item.title,date:item.date,url:item.url,cover:item.coverLocal||item.cover});
+  }
+  saveAlphaFavs(favs);
+  return !!(idx<0);
+}
+
+// === Social URLs ===
+function xhsUrl(n){return `https://www.xiaohongshu.com/search_result?keyword=${encodeURIComponent(n+' 合肥')}`;}
+function dzdpUrl(n){return `https://www.dianping.com/search/keyword/127/0_${encodeURIComponent(n)}`;}
+function forumUrl(kw){return `https://ustcforum.com/?q=${encodeURIComponent(kw)}`;}
+
+// === 校内 tab ===
+function renderCampus(){
+  const el=document.getElementById('campusGrid'); el.innerHTML='';
+  campusKeyPOIs.forEach(p=>{
+    el.innerHTML+=`<div class="campus-tile" onclick="map.setView([${p.lat},${p.lng}],17)">
+      <div class="tile-icon">${p.icon}</div>
+      <div class="tile-name">${p.name}</div>
+      <div class="tile-sub">${p.sub} · ${dist(DORM,[p.lat,p.lng])}</div>
+    </div>`;
+  });
+}
+
+// === 收藏 tab ===
+function renderFavs(){
+  const el=document.getElementById('favsList');const favs=getFavs();
+  if(!favs.length && !getAlphaFavs().length){el.innerHTML='<div class="empty-fav">⭐ 还没有收藏<br>搜索周边点 ☆ 或在资讯中点 ☆ 添加</div>';return;}
+  el.innerHTML='<div class="section-header">⭐ 我的收藏</div>';
+  favs.forEach(f=>{
+    const d=f.lat?dist(DORM,[f.lat,f.lng]):'';
+    el.innerHTML+=`<div class="poi-card" onclick="map.setView([${f.lat||0},${f.lng||0}],17)">
+      <div class="poi-icon">${f.icon||'📍'}</div>
+      <div class="poi-body">
+        <div class="poi-name">${f.name} <span class="fav-star faved" onclick="event.stopPropagation();removeFav('${esc(f.name)}');renderFavs()">★</span></div>
+        <div class="poi-meta">${f.rating?`<span class="poi-rating">⭐${f.rating}</span>`:''}${f.cost?`<span class="poi-cost">¥${f.cost}/人</span>`:''}${d?`<span class="poi-dist">📍${d}</span>`:''}</div>
+        ${f.addr?`<div class="poi-addr">${f.addr}</div>`:''}
+        <div class="poi-links">
+          <a href="${xhsUrl(f.name)}" target="_blank" onclick="event.stopPropagation()">📕 小红书</a>
+          <a href="${dzdpUrl(f.name)}" target="_blank" onclick="event.stopPropagation()">🟠 大众点评</a>
+        </div>
+      </div></div>`;
+  });
+  // Alpha Lab 收藏
+  const alphaFavs = getAlphaFavs();
+  if(alphaFavs.length){
+    el.innerHTML += '<div class="section-header">⚡ Alpha Lab 收藏</div>';
+    alphaFavs.forEach(f => {
+      el.innerHTML += `<div class="news-card" onclick="window.open('${f.url}','_blank')" style="margin:4px 8px;border-radius:8px;">
+        <div class="news-title">${f.title} <span class="fav-star faved" onclick="event.stopPropagation();toggleAlphaFav('${f.id}');renderFavs()">★</span></div>
+        <div class="news-meta"><span>📅 ${f.date||''}</span><span>⚡ Alpha Lab</span></div>
+      </div>`;
+    });
+  }
+}
+
+// === 周边搜索 ===
+let searchMarkers=[];
+function clearSearchMarkers(){searchMarkers.forEach(m=>map.removeLayer(m));searchMarkers=[];}
+
+async function searchPOI(keyword,types){
+  const el=document.getElementById('results');
+  el.innerHTML='<div class="loading">搜索中...</div>';
+  clearSearchMarkers();
+  let url=`https://restapi.amap.com/v3/place/around?key=${AMAP_KEY}&location=${getCampusLoc()}&radius=3000&offset=25&extensions=all`;
+  if(types)url+=`&types=${types}`;
+  if(keyword)url+=`&keywords=${encodeURIComponent(keyword)}`;
+  try{
+    const r=await fetch(url);const data=await r.json();
+    if(data.status==='1'&&data.pois?.length)renderSearch(data.pois);
+    else el.innerHTML='<div class="loading">未找到结果 🤷</div>';
+  }catch{el.innerHTML='<div class="loading">网络错误</div>';}
+}
+
+function renderSearch(pois){
+  const el=document.getElementById('results');
+  el.innerHTML=`<div class="section-header">找到 ${pois.length} 个 · 3km内</div>`;
+  const selC=CAMPUS_COORDS[(document.getElementById('campusSelect')||{}).value||'gaoxin']||CAMPUS_COORDS.gaoxin;
+  const bounds=[selC.center];
+  window._lastPois=pois;
+  pois.forEach((poi,idx)=>{
+    const [lng,lat]=poi.location.split(',').map(Number);
+    const d=poi.distance||'?';
+    const rating=poi.biz_ext?.rating||'';
+    const cost=poi.biz_ext?.cost&&poi.biz_ext.cost!=='[]'?poi.biz_ext.cost:'';
+    const addr=poi.address&&poi.address!=='[]'?poi.address:'';
+    const fv=isFaved(poi.name);
+    const m=L.marker([lat,lng],{icon:L.divIcon({className:'',html:`<div style="display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform 0.2s" onmouseenter="this.style.transform='scale(1.08)'" onmouseleave="this.style.transform='scale(1)'"><div style="background:#3b82f6;color:#fff;padding:3px 8px;border-radius:8px;font-size:10px;font-weight:600;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis;box-shadow:0 2px 6px rgba(0,0,0,0.35);border:1.5px solid #fff">${poi.name.length>8?poi.name.slice(0,8)+'…':poi.name}</div>${rating?`<div style="background:#f59e0b;color:#fff;padding:1px 5px;border-radius:4px;font-size:9px;margin-top:2px;box-shadow:0 1px 3px rgba(0,0,0,0.3)">⭐${rating}</div>`:''}<div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #3b82f6;margin-top:1px"></div></div>`,iconSize:null,iconAnchor:[50,40]})}).addTo(map);
+    m.on('click',()=>showAmapPopup(poi));
+    searchMarkers.push(m);bounds.push([lat,lng]);
+    el.innerHTML+=`<div class="poi-card" onclick="map.setView([${lat},${lng}],17);showAmapPopup(window._lastPois[${idx}])">
+      <div class="poi-icon">📍</div>
+      <div class="poi-body">
+        <div class="poi-name">${poi.name} <span class="fav-star ${fv?'faved':''}" onclick="event.stopPropagation();toggleAmapFav(this,'${esc(poi.name)}',${lat},${lng},'${esc(addr)}','${rating}','${cost}')">${fv?'★':'☆'}</span></div>
+        <div class="poi-meta">
+          ${rating?`<span class="poi-rating">⭐${rating}</span>`:''}
+          ${cost?`<span class="poi-cost">¥${cost}/人</span>`:''}
+          <span class="poi-dist">📍${d}m</span>
+        </div>
+        ${addr?`<div class="poi-addr">${addr}</div>`:''}
+        <div class="poi-links">
+          <a href="${xhsUrl(poi.name)}" target="_blank" onclick="event.stopPropagation()">📕 小红书</a>
+          <a href="${dzdpUrl(poi.name)}" target="_blank" onclick="event.stopPropagation()">🟠 点评</a>
+          <a href="${forumUrl(poi.name)}" target="_blank" onclick="event.stopPropagation()">🍵 茶馆</a>
+        </div>
+      </div></div>`;
+  });
+  if(pois.length>1)map.fitBounds(L.latLngBounds(bounds).pad(0.1));
+}
+
+function toggleAmapFav(el,name,lat,lng,addr,rating,cost){
+  if(isFaved(name)){removeFav(name);el.classList.remove('faved');el.textContent='☆';}
+  else{addFav({name,lat,lng,addr,rating,cost,icon:'📍'});el.classList.add('faved');el.textContent='★';}
+  renderFavs();
+}
+
+// === 南七茶馆 ===
+function loadForum(tag='campus'){
+  const el=document.getElementById('forumResults');
+  const posts=FORUM_DATA[tag];
+  if(!posts||!posts.length){
+    el.innerHTML=`<div class="loading">暂无帖子 · <a href="https://ustcforum.com/t/${tag}" target="_blank" style="color:#60a5fa">直接访问茶馆</a></div>`;
+    return;
+  }
+  el.innerHTML='';
+  if(tag==='hearsay'){
+    el.innerHTML+=`<div class="note-box">📣 蜗壳小道消息（USTC小道消息）在南七茶馆发帖较少，更多内容请关注其<b>微信公众号</b>（搜索「USTC小道消息」）。<br>以下为茶馆历史帖子：</div>`;
+  }
+  posts.forEach(d=>{
+    const isHot=d.r>=10||d.v>=1000;
+    el.innerHTML+=`<div class="forum-card" onclick="window.open('https://ustcforum.com/d/${d.id}','_blank')">
+      <div class="forum-title">${d.t}</div>
+      <div class="forum-meta">
+        <span>${d.a}</span>
+        <span>💬 ${d.r}</span>
+        <span>👁️ ${d.v}</span>
+        <span>${formatTime(d.ts)}</span>
+        ${isHot?'<span class="forum-tag hot">🔥 热门</span>':''}
+      </div>
+    </div>`;
+  });
+}
+
+function formatTime(iso){
+  if(!iso)return '';
+  const d=new Date(iso), now=new Date();
+  const diff=Math.floor((now-d)/1000);
+  if(diff<3600) return `${Math.floor(diff/60)}分钟前`;
+  if(diff<86400) return `${Math.floor(diff/3600)}小时前`;
+  if(diff<604800) return `${Math.floor(diff/86400)}天前`;
+  return d.toLocaleDateString('zh-CN',{month:'short',day:'numeric'});
+}
+
+// === Popup ===
+let curPoi=null;
+function showAmapPopup(poi){
+  const [lng,lat]=poi.location.split(',').map(Number);
+  const rating=poi.biz_ext?.rating||'-';
+  const cost=poi.biz_ext?.cost&&poi.biz_ext.cost!=='[]'?poi.biz_ext.cost:'-';
+  const hours=poi.biz_ext?.opentime2||poi.biz_ext?.open_time||'';
+  const tel=poi.tel&&poi.tel!=='[]'?poi.tel:'';
+  const addr=poi.address&&poi.address!=='[]'?poi.address:'';
+  curPoi={name:poi.name,lat,lng,addr,rating:poi.biz_ext?.rating,cost:poi.biz_ext?.cost,icon:'📍'};
+  const p=document.getElementById('infoPopup');
+  document.getElementById('popName').textContent=poi.name;
+  document.getElementById('popAddr').textContent=addr?`📍 ${addr}`:'';
+  document.getElementById('popStats').innerHTML=`
+    <div class="stat"><div class="stat-val" style="color:#f59e0b">${rating}</div><div class="stat-label">评分</div></div>
+    <div class="stat"><div class="stat-val" style="color:#22c55e">¥${cost}</div><div class="stat-label">人均</div></div>
+    <div class="stat"><div class="stat-val" style="color:#60a5fa">${poi.distance||'?'}m</div><div class="stat-label">距离</div></div>`;
+  document.getElementById('popHours').textContent=hours?`🕐 ${hours}`:'';
+  document.getElementById('popTel').textContent=tel?`📞 ${tel}`:'';
+  document.getElementById('popLinks').innerHTML=`
+    <a class="xhs" href="${xhsUrl(poi.name)}" target="_blank">📕 小红书看评价</a>
+    <a class="dzdp" href="${dzdpUrl(poi.name)}" target="_blank">🟠 大众点评</a>
+    <a class="forum" href="${forumUrl(poi.name)}" target="_blank">🍵 茶馆搜一下</a>`;
+  updateFavBtn();p.classList.add('show');
+}
+function updateFavBtn(){const b=document.getElementById('popFav');if(curPoi&&isFaved(curPoi.name)){b.textContent='★ 已收藏';b.classList.add('faved');}else{b.textContent='☆ 收藏';b.classList.remove('faved');}}
+function toggleFavFromPopup(){if(!curPoi)return;if(isFaved(curPoi.name))removeFav(curPoi.name);else addFav(curPoi);updateFavBtn();renderFavs();}
+function closePopup(){document.getElementById('infoPopup').classList.remove('show');curPoi=null;}
+const CAMPUS_COORDS = {
+  gaoxin: { center: [31.819, 117.129], zoom: 15, name: '高新校区' },
+  east:   { center: [31.838, 117.265], zoom: 16, name: '东校区' },
+  west:   { center: [31.843, 117.253], zoom: 16, name: '西校区' },
+  middle: { center: [31.837, 117.262], zoom: 16, name: '中校区' },
+};
+function switchCampus(id) {
+  const c = CAMPUS_COORDS[id];
+  if (c) {
+    map.setView(c.center, c.zoom);
+    document.title = 'USTC ' + c.name + '生活地图';
+    // 如果在周边 tab，自动刷新搜索结果
+    if(document.querySelector('.tab.active')?.textContent?.includes('周边')){
+      clearSearchMarkers();
+      const input=document.getElementById('searchInput');
+      if(input&&input.value.trim()){searchPOI(input.value.trim());}
+    }
+  }
+}
+function goHome(){const sel=document.getElementById('campusSelect');const c=CAMPUS_COORDS[sel?sel.value:'gaoxin']||CAMPUS_COORDS.gaoxin;map.setView(c.center,c.zoom);closePopup();clearSearchMarkers();}
+
+// === Tab switch ===
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
+  document.querySelectorAll('.tab-content').forEach(c=>c.style.display='none');
+  document.getElementById('tab-'+tab).style.display='block';
+  // Update search placeholder based on active tab
+  const si=document.getElementById('searchInput');
+  if(tab==='news'){
+    si.placeholder='🔍 搜资讯（关键词搜通知公告/学术报告）';
+  } else if(tab==='nearby'){
+    si.placeholder='🔍 搜周边（奶茶、火锅、健身...）';
+  } else {
+    si.placeholder='🔍 搜周边（奶茶、火锅、健身...）';
+  }
+  if(tab==='campus')renderCampus();
+  if(tab==='favs')renderFavs();
+  if(tab==='forum')loadForum('campus');
+  if(tab==='nearby'){clearSearchMarkers();goHome();}
+  if(tab==='news')loadNews();
+}
+
+// Quick search buttons
+document.querySelectorAll('#tab-nearby .quick-btn').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('#tab-nearby .quick-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    searchPOI(btn.dataset.kw||null,btn.dataset.type||null);
+  };
+});
+
+// Forum tag buttons
+document.querySelectorAll('.forum-btn').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('.forum-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    loadForum(btn.dataset.tag);
+  };
+});
+
+// Search input
+let timer;const si=document.getElementById('searchInput');
+si.addEventListener('input',e=>{clearTimeout(timer);if(e.target.value.trim())timer=setTimeout(()=>{
+  const activeTab=document.querySelector('.tab.active')?.dataset.tab;
+  if(activeTab==='news'){loadNews(null,e.target.value.trim());}
+  else{switchTab('nearby');searchPOI(e.target.value.trim());}
+},600);});
+si.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.value.trim()){clearTimeout(timer);
+  const activeTab=document.querySelector('.tab.active')?.dataset.tab;
+  if(activeTab==='news'){loadNews(null,e.target.value.trim());}
+  else{switchTab('nearby');searchPOI(e.target.value.trim());}
+}});
+
+// News type button listeners
+document.querySelectorAll('.news-btn').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('.news-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    loadNews(btn.dataset.ntype);
+  };
+});
+
+// === 资讯 tab (静态数据，定期更新) ===
+let newsCurrentType='notice'; // 'notice'=通知公告, 'academic'=学术报告
+let newsCurrentKeyword='';
+
+function loadNews(type, keyword){
+  if(type) newsCurrentType=type==='2'||type===2?'notice':type==='3'||type===3?'academic':type;
+  if(keyword!==undefined && keyword!==null) newsCurrentKeyword=keyword.toLowerCase();
+  renderStaticNews();
+}
+
+function renderStaticNews(){
+  const el=document.getElementById('newsResults');
+  const items=NEWS_DATA[newsCurrentType]||[];
+  const typeLabel=newsCurrentType==='notice'?'📋 通知公告':'🎓 学术报告';
+  const detailUrl=newsCurrentType==='notice'
+    ?'https://i.ustc.edu.cn/page/site/noticeAnnouncement'
+    :'https://i.ustc.edu.cn/page/site/academicReport';
+  // Filter by keyword if any
+  const filtered=newsCurrentKeyword
+    ?items.filter(it=>it.title.toLowerCase().includes(newsCurrentKeyword)||
+                      (it.tags||[]).some(t=>t.toLowerCase().includes(newsCurrentKeyword)))
+    :items;
+  if(!filtered.length){
+    el.innerHTML=`<div class="loading">暂无相关资讯 📭${newsCurrentKeyword?' · 关键词: '+newsCurrentKeyword:''}</div>`;
+    return;
+  }
+  el.innerHTML=`<div class="section-header">${typeLabel} · ${filtered.length} 条 · 快照 ${NEWS_DATA.snapshot}</div>`;
+  filtered.forEach(item=>{
+    const tags=(item.tags||[]).map(t=>{
+      const isAcademic=newsCurrentType==='academic';
+      return `<span class="news-tag${isAcademic?' academic':''}">${t}</span>`;
+    }).join(' ');
+    const date=item.date?item.date.split(' ')[0]:'';
+    el.innerHTML+=`<div class="news-card" onclick="window.open('${detailUrl}','_blank')">
+      <div class="news-title">${item.title}</div>
+      <div class="news-meta">
+        <span>📅 ${date}</span>
+        <span>👁️ ${item.clicks||0}</span>
+        ${tags}
+      </div>
+    </div>`;
+  });
+  el.innerHTML+=`<div class="note-box">📅 数据快照: ${NEWS_DATA.snapshot} · 由 Alpha 定期更新<br>查看最新: <a href="${detailUrl}" target="_blank">i.ustc.edu.cn</a></div>`;
+}
+
+// === Alpha Lab News (从 alpha-lab-news.json 加载) ===
+const XHS_FEED_DATA = {"source": "小红书个性化 Feed", "keywords": ["中科大", "合肥高新区 美食", "中科大 高新校区", "合肥高新区 探店", "中科大 AI", "合肥 约会", "合肥 赏花"], "fetchedAt": "2026-03-27T01:54:49.290985+08:00", "count": 56, "items": [{"id": "6769239e000000000800c8b1", "title": "被600万人看过的中科大研三中期答辩现场", "cover": "http://sns-webpic-qc.xhscdn.com/202603270153/256b3fd484bb0cf741d4a9677adaaa13/1040g00831bobqujth0005o5pbjh08gc9vlouth8!nc_n_webp_mw_1", "likes": "22771", "comments": "345", "user": "一只小蜗牛罢了", "type": "video", "url": "https://www.xiaohongshu.com/explore/6769239e000000000800c8b1", "keyword": "中科大"}, {"id": "67db86780000000009016a99", "title": "在合肥不知道吃什么就看看这张图！绿色无广！", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/27bbb73d9176772420add9fb109be2d9/notes_pre_post/1040g3k831f82c4er6i105pe1sap4aqbuq3s4rl0!nc_n_webp_mw_1", "likes": "3230", "comments": "195", "user": "橘子宝藏🍊", "type": "normal", "url": "https://www.xiaohongshu.com/explore/67db86780000000009016a99", "keyword": "合肥高新区 美食"}, {"id": "67a9f359000000001800b32d", "title": "24科软实际就读体验", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/5789d96984a473ea823d0f36a4da3dd4/1040g00831dnl6c2t0s005o3qkt908ffeh0h1650!nc_n_webp_mw_1", "likes": "1461", "comments": "207", "user": "ly", "type": "normal", "url": "https://www.xiaohongshu.com/explore/67a9f359000000001800b32d", "keyword": "中科大 高新校区"}, {"id": "66ae26d3000000002701f056", "title": "就在中科大附近！", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/874f3a9fd61d8148c1c5d75f94167768/1040g0083161oe3se1c005n8n5cq4m5j3dtlbqr0!nc_n_webp_mw_1", "likes": "1766", "comments": "181", "user": "美术馆扒蒜的猫", "type": "normal", "url": "https://www.xiaohongshu.com/explore/66ae26d3000000002701f056", "keyword": "合肥高新区 探店"}, {"id": "69b2bce1000000000600c5d3", "title": "Ask Me Anything！", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/0af958b2a4e4a823cc6efb78a9af16b0/1040g2sg31tk1e56j7qc05pb17qn41ffrm3lvvm0!nc_n_webp_mw_1", "likes": "2968", "comments": "1198", "user": "NingWang", "type": "normal", "url": "https://www.xiaohongshu.com/explore/69b2bce1000000000600c5d3", "keyword": "中科大 AI"}, {"id": "6846efe7000000002002be0f", "title": "在合肥花的最值的一笔钱…森林小火车🚂", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/a48ed533db0664b125db51fe007b2d25/1040g2sg31iguqahp0a105nskrj2093u2s6ukrno!nc_n_webp_mw_1", "likes": "47286", "comments": "3769", "user": "是冬冬啊", "type": "normal", "url": "https://www.xiaohongshu.com/explore/6846efe7000000002002be0f", "keyword": "合肥 约会"}, {"id": "68e8545f00000000070037b1", "title": "巢湖你不宣传这里真是糊涂啊！！！", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/d3907621709b1c21c0acfbbc7605b89c/1040g2sg31neih98tkueg4a1b3ndrhdlb4dkandg!nc_n_webp_mw_1", "likes": "3319", "comments": "303", "user": "小陈不熬夜", "type": "video", "url": "https://www.xiaohongshu.com/explore/68e8545f00000000070037b1", "keyword": "合肥 赏花"}, {"id": "67eeb54d000000001c01735d", "title": "中科大读研丨行星论坛照片", "cover": "http://sns-webpic-qc.xhscdn.com/202603270153/84cfeac60b7af0bf93dfd3802b164483/1040g2sg31fqju7h1nedg5ops75t6bm7pd408u8o!nc_n_webp_mw_1", "likes": "8025", "comments": "2088", "user": "白皓", "type": "normal", "url": "https://www.xiaohongshu.com/explore/67eeb54d000000001c01735d", "keyword": "中科大"}, {"id": "66cd9717000000001f019962", "title": "沪漂回合肥后常去的店 🖤", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/53b0d3e31c25d90014f408cfb8831d57/1040g0083170eu0r7jq005p7fv1ihm21kd8fpuco!nc_n_webp_mw_1", "likes": "1093", "comments": "272", "user": "Hirow_", "type": "normal", "url": "https://www.xiaohongshu.com/explore/66cd9717000000001f019962", "keyword": "合肥高新区 美食"}, {"id": "67ced702000000000e005cdc", "title": "刘亦菲来中科大了？", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/2eb84447b77ba5af06d6dd027999b3fb/notes_pre_post/1040g3k831erlsfolmi005ofklupk1o65t1r9huo!nc_n_webp_mw_1", "likes": "963", "comments": "58", "user": "高岑羽", "type": "normal", "url": "https://www.xiaohongshu.com/explore/67ced702000000000e005cdc", "keyword": "中科大 高新校区"}, {"id": "68cd66860000000013004413", "title": "合肥火锅记录📝努力吃火锅ing", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/20d52ff479edcf900a892aa5cdba65aa/1040g00831mmkr12j4u005n22sdohl3ij7ftnpr8!nc_n_webp_mw_1", "likes": "1033", "comments": "188", "user": "OluBell", "type": "normal", "url": "https://www.xiaohongshu.com/explore/68cd66860000000013004413", "keyword": "合肥高新区 探店"}, {"id": "683489df00000000230108ce", "title": "中科大ai专业就读体验简直一坨狗屎", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/a582f47f45c8084bc72543269e24df07/1040g2sg31hvvoetolqjg5pm60h6nc0uaj8kti60!nc_n_webp_mw_1", "likes": "1568", "comments": "378", "user": "于墨文", "type": "normal", "url": "https://www.xiaohongshu.com/explore/683489df00000000230108ce", "keyword": "中科大 AI"}, {"id": "6836e1a3000000002300e73f", "title": "合肥！可以呆一下午的漂亮小店！好chill。。。", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/b489a88e9f7638418d45f881124fce7c/1040g00831i18j2asmm0049gu64hg00ve9k0ubpg!nc_n_webp_mw_1", "likes": "4850", "comments": "83", "user": "白日梦美", "type": "normal", "url": "https://www.xiaohongshu.com/explore/6836e1a3000000002300e73f", "keyword": "合肥 约会"}, {"id": "67c039a2000000000e007cdb", "title": "开福寺的梅花盛开啦", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/b23d94f6fcbd8e6b50f0269db4ef584d/1040g00831edd8slih0005ngjt3509810oadbi08!nc_n_webp_mw_1", "likes": "2371", "comments": "242", "user": "摄影师-许宸", "type": "video", "url": "https://www.xiaohongshu.com/explore/67c039a2000000000e007cdb", "keyword": "合肥 赏花"}, {"id": "687f5efe0000000011002bb1", "title": "top3学子怎么晒通知书最strong", "cover": "http://sns-webpic-qc.xhscdn.com/202603270153/c38d26cca0bce214bc9c04685657a7c9/notes_pre_post/1040g3k831k82gim93q8g5ndl95509asn2mb0ekg!nc_n_webp_mw_1", "likes": "6123", "comments": "171", "user": "二月十三🦒归零Ver.", "type": "normal", "url": "https://www.xiaohongshu.com/explore/687f5efe0000000011002bb1", "keyword": "中科大"}, {"id": "67caeed80000000028028224", "title": "2025｜合肥去哪吃", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/79ab04e90757f4d15f145fb58dbc1095/notes_pre_post/1040g3k031enrqi3qlo005p7361s09gb7i0us3go!nc_n_webp_mw_1", "likes": "917", "comments": "96", "user": "心怡指南", "type": "normal", "url": "https://www.xiaohongshu.com/explore/67caeed80000000028028224", "keyword": "合肥高新区 美食"}, {"id": "68602c3b000000001202edd8", "title": "浙江省排700去中科大我后悔了吗", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/6c9508f1b76eb22587a12f4fa2d96364/notes_pre_post/1040g3k831j9jif7ej0005o6cbblgbgqjfjdklho!nc_n_webp_mw_1", "likes": "780", "comments": "256", "user": "江晚", "type": "normal", "url": "https://www.xiaohongshu.com/explore/68602c3b000000001202edd8", "keyword": "中科大 高新校区"}, {"id": "689c8224000000001d00a4f9", "title": "合肥新开的！！！合肥新开的！！！！！", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/552f4655b40e22f0ce40388d863379bc/1040g2sg31l4h461c2ge040lhc7cvf5lsl3booig!nc_n_webp_mw_1", "likes": "989", "comments": "91", "user": "啵啵糖", "type": "normal", "url": "https://www.xiaohongshu.com/explore/689c8224000000001d00a4f9", "keyword": "合肥高新区 探店"}, {"id": "680f5ce80000000023011a1b", "title": "掉队的C9大学着急了", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/9c555461d2aa76799aaf2d9348f8e877/spectrum/1040g0k031gqm8t6l38005ohpfon8d5goqrm5m18!nc_n_webp_mw_1", "likes": "538", "comments": "208", "user": "真故研究室", "type": "normal", "url": "https://www.xiaohongshu.com/explore/680f5ce80000000023011a1b", "keyword": "中科大 AI"}, {"id": "688b0e5b000000002303b58c", "title": "🚗合肥1h直达！这条神仙自驾路线美哭了‼️🌄", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/b3319aae166d877f1dc6ab21c7cd7c92/notes_pre_post/1040g3k031kjfhfv3346g5p6a9o42oqaknfisgao!nc_n_webp_mw_1", "likes": "3989", "comments": "170", "user": "空气凤梨🍍", "type": "normal", "url": "https://www.xiaohongshu.com/explore/688b0e5b000000002303b58c", "keyword": "合肥 约会"}, {"id": "69b3d9b2000000002102d636", "title": "这次不能错过！合肥3月下旬的花都在这！", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/4da05e9b354e12027bed4c7a5e1295fb/notes_pre_post/1040g3k831tlaedu572ag4bt0di9te686jj2r0vg!nc_n_webp_mw_1", "likes": "1288", "comments": "77", "user": "AIRGO艾尔狗📸", "type": "normal", "url": "https://www.xiaohongshu.com/explore/69b3d9b2000000002102d636", "keyword": "合肥 赏花"}, {"id": "686201db000000000d0263f7", "title": "让我们恭喜这位12岁小胖墩考入中科大🎉", "cover": "http://sns-webpic-qc.xhscdn.com/202603270153/5b355ebda85dbe566321a0131bcb4d18/notes_pre_post/1040g3k831jbco0ri2e705n99qn345iefavopt68!nc_n_webp_mw_1", "likes": "5108", "comments": "347", "user": "woody木希", "type": "normal", "url": "https://www.xiaohongshu.com/explore/686201db000000000d0263f7", "keyword": "中科大"}, {"id": "6923c8da000000001f00e565", "title": "", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/3eb5cae466c754abc5d901fc7aba5fa4/1040g00831p8kcbpk2o005o9pvpqgkpvl0rdp580!nc_n_webp_mw_1", "likes": "729", "comments": "180", "user": "爱吃土豆", "type": "normal", "url": "https://www.xiaohongshu.com/explore/6923c8da000000001f00e565", "keyword": "合肥高新区 美食"}, {"id": "686e94890000000015021326", "title": "中国科学技术大学高新校区女生宿舍", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/4abb4571cda0858f993f63ad6ac476ab/1040g2sg31jnlbuu334e05o62uhe0buuljob4ig0!nc_n_webp_mw_1", "likes": "668", "comments": "176", "user": "Wen", "type": "video", "url": "https://www.xiaohongshu.com/explore/686e94890000000015021326", "keyword": "中科大 高新校区"}, {"id": "692f9cba000000000d00e837", "title": "缺点：只有合肥有……", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/70e8d2b1988fbaa672fdf879b4fb78d1/notes_pre_post/1040g3k031pk5u8qb4a0g5nt98ragbm7r3mcvapg!nc_n_webp_mw_1", "likes": "959", "comments": "80", "user": "合肥小猪猪🐷", "type": "normal", "url": "https://www.xiaohongshu.com/explore/692f9cba000000000d00e837", "keyword": "合肥高新区 探店"}, {"id": "6910abd800000000070005f0", "title": "", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/79dc886c63133314cc4fe8152dea8112/1040g00831olv3qa74q6g5q4rv4rmbom24qj3gbg!nc_n_webp_mw_1", "likes": "477", "comments": "197", "user": "HerrDoktorLi", "type": "normal", "url": "https://www.xiaohongshu.com/explore/6910abd800000000070005f0", "keyword": "中科大 AI"}, {"id": "68bec357000000001d0203da", "title": "合肥dating可以做的50件小事（建议收藏）", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/1407b8057e81758f4284f9248a836d2f/notes_pre_post/1040g3k031m5v931b5m105nt98ragbm7rko3e830!nc_n_webp_mw_1", "likes": "3869", "comments": "1004", "user": "合肥小猪猪🐷", "type": "normal", "url": "https://www.xiaohongshu.com/explore/68bec357000000001d0203da", "keyword": "合肥 约会"}, {"id": "67da8643000000000e006fdb", "title": "这绝对是全合肥最大的油菜花海！！！", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/12e2a981b3ea4b4f648d0287a3ed7978/1040g2sg31f7347gd6a004bnpr82rme1mmcer9q0!nc_n_webp_mw_1", "likes": "1012", "comments": "241", "user": "老乡鸡", "type": "normal", "url": "https://www.xiaohongshu.com/explore/67da8643000000000e006fdb", "keyword": "合肥 赏花"}, {"id": "693286de000000001e017042", "title": "中科大实验终结量子物理“百年之辩”", "cover": "http://sns-webpic-qc.xhscdn.com/202603270153/aa0661835a26a4928a889e88c7930b08/spectrum/1040g34o31pn16af2k00g5nr9lva08gaf633hho0!nc_n_webp_mw_1", "likes": "3480", "comments": "209", "user": "环球网科技-哇喔", "type": "video", "url": "https://www.xiaohongshu.com/explore/693286de000000001e017042", "keyword": "中科大"}, {"id": "66126514000000001b00eb87", "title": "科大的巧克力麻薯真的好吃 😋", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/b5952f5e8dcb4b526603babf7a3f355e/1040g0083119l2evqma705nm65md08orcffd0v1o!nc_n_webp_mw_1", "likes": "625", "comments": "204", "user": "牛奶味冰棍儿", "type": "normal", "url": "https://www.xiaohongshu.com/explore/66126514000000001b00eb87", "keyword": "合肥高新区 美食"}, {"id": "68f9fef50000000007031135", "title": "如果能一直待在USTC不用毕业就好了", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/927c7010e7e4369addfcde4e16736ec3/notes_pre_post/1040g3k031nvqjnsn4s6g5ntjkhn08m19l9vuf2g!nc_n_webp_mw_1", "likes": "372", "comments": "150", "user": "无孩爱猫男", "type": "normal", "url": "https://www.xiaohongshu.com/explore/68f9fef50000000007031135", "keyword": "中科大 高新校区"}, {"id": "687c51d30000000010012317", "title": "合肥E类人才福利全解析", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/fbaf654a6d3a0f199fb2773e6c4f2111/1040g2sg31k532ps02a5g5pt711jji4lnfgnlin8!nc_n_webp_mw_1", "likes": "240", "comments": "97", "user": "一个不争气的程序员", "type": "normal", "url": "https://www.xiaohongshu.com/explore/687c51d30000000010012317", "keyword": "合肥高新区 探店"}, {"id": "68ce3b420000000013034db5", "title": "ResNet作者任少卿老师（44w引）入职中科大", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/f61c0e941a7720118571a44d525c7819/1040g2sg31ml2r6l1l8dg5ol3e3bmsli9kuc4oug!nc_n_webp_mw_1", "likes": "393", "comments": "68", "user": "MST", "type": "normal", "url": "https://www.xiaohongshu.com/explore/68ce3b420000000013034db5", "keyword": "中科大 AI"}, {"id": "68933faa00000000230378d0", "title": "在合肥待了四天，这两家店值得反复去", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/5697b734c26f5c9ec3b8ac429b4fd42b/1040g00831krfnppjj2004a36i6l3m596bcc66s8!nc_n_webp_mw_1", "likes": "2893", "comments": "104", "user": "Yokooo", "type": "normal", "url": "https://www.xiaohongshu.com/explore/68933faa00000000230378d0", "keyword": "合肥 约会"}, {"id": "67e40155000000001b039dbe", "title": "听说是合肥最大的日本樱", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/a731e7766530ee83d89efb434d2deffd/notes_pre_post/1040g3k031fgb7v7a6i005p8egotkgvu7jua6lp8!nc_n_webp_mw_1", "likes": "1011", "comments": "71", "user": "Baby酱", "type": "normal", "url": "https://www.xiaohongshu.com/explore/67e40155000000001b039dbe", "keyword": "合肥 赏花"}, {"id": "68551194000000000d025ec8", "title": "中科大高新图书馆看到的两段话", "cover": "http://sns-webpic-qc.xhscdn.com/202603270153/7aeaace4fadf96e33805626d423ea5b6/notes_pre_post/1040g3k831iuokdn0gukg5pndcs8ne7k6aov2iug!nc_n_webp_mw_1", "likes": "3100", "comments": "119", "user": "草真好吃", "type": "normal", "url": "https://www.xiaohongshu.com/explore/68551194000000000d025ec8", "keyword": "中科大"}, {"id": "684405f1000000000303d9d9", "title": "沪漂回合肥后常去的店.", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/793ae00e4eff29e76135d607e47785c5/1040g2sg31ie3v1hvge705p7fv1ihm21kerv9el0!nc_n_webp_mw_1", "likes": "560", "comments": "108", "user": "Hirow_", "type": "normal", "url": "https://www.xiaohongshu.com/explore/684405f1000000000303d9d9", "keyword": "合肥高新区 美食"}, {"id": "68af72dc000000001c036a9a", "title": "挑战合肥最豪华大学宿舍", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/aec67da491d4fa21371f20803f3cab5e/1040g00831ln0m4lul0005n99qn345iefm8n247o!nc_n_webp_mw_1", "likes": "350", "comments": "67", "user": "woody木希", "type": "video", "url": "https://www.xiaohongshu.com/explore/68af72dc000000001c036a9a", "keyword": "中科大 高新校区"}, {"id": "6638cb28000000001e019734", "title": "合肥CityWalk｜高新区也太多宝藏了", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/54fcf63fbcf221295cc45326b92a293e/1040g008312f51crsm63048cp9d8fkhljo9l91c8!nc_n_webp_mw_1", "likes": "231", "comments": "40", "user": "Story.", "type": "normal", "url": "https://www.xiaohongshu.com/explore/6638cb28000000001e019734", "keyword": "合肥高新区 探店"}, {"id": "69a333e1000000002801ed75", "title": "AI眼里的中国高校TOP20（3月版）", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/d65a6e0eb4cd72abe39a9d12b72045fd/notes_pre_post/1040g3k831t50h0735scg5q6u1c2dpeaa4fu6ecg!nc_n_webp_mw_1", "likes": "263", "comments": "74", "user": "观潮｜教育参考", "type": "normal", "url": "https://www.xiaohongshu.com/explore/69a333e1000000002801ed75", "keyword": "中科大 AI"}, {"id": "67fce0b4000000001c02db8a", "title": "合肥·姥山岛｜晒光、吹风、看船 🚢", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/f4cd2dd06a8adf091432c4c0d559544c/1040g00831g8kl9tlha005orqunoosp03gnak6o0!nc_n_webp_mw_1", "likes": "2248", "comments": "137", "user": "我不知道", "type": "normal", "url": "https://www.xiaohongshu.com/explore/67fce0b4000000001c02db8a", "keyword": "合肥 约会"}, {"id": "6827d6b0000000002300d31c", "title": "合肥花冲公园绣球花开了 | 早上光影绝佳", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/1246f0467a6f798e3b0954f6f6f88495/notes_pre_post/1040g3k831hij2h5ij8e04aaap7bnidvtmfnf8i8!nc_n_webp_mw_1", "likes": "919", "comments": "115", "user": "另影-", "type": "normal", "url": "https://www.xiaohongshu.com/explore/6827d6b0000000002300d31c", "keyword": "合肥 赏花"}, {"id": "685d10d6000000001c031e30", "title": "我的学生时代结束了🎓", "cover": "http://sns-webpic-qc.xhscdn.com/202603270153/4eb3bad22646b1a2cdb463bb21281d37/notes_pre_post/1040g3k831j6ic6u72uig5n99gbv4g84tofj5hlo!nc_n_webp_mw_1", "likes": "2818", "comments": "138", "user": "小乔心怀宇宙", "type": "normal", "url": "https://www.xiaohongshu.com/explore/685d10d6000000001c031e30", "keyword": "中科大"}, {"id": "6707d212000000001b02238d", "title": "合肥｜心目中No.1高级中餐厅", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/6c6d8f3c9e26e5a08f175a729d1e71e2/1040g008318paka620o005p7361s09gb73hkb9dg!nc_n_webp_mw_1", "likes": "418", "comments": "4", "user": "心怡指南", "type": "normal", "url": "https://www.xiaohongshu.com/explore/6707d212000000001b02238d", "keyword": "合肥高新区 美食"}, {"id": "695fba96000000001a037896", "title": "上次在中科大给学术报告是11年前本科答辩", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/b74152da4b27effd7374c5a280d6e367/1040g2sg31r352g4vg0e05pjkmqrhomn0opdlg98!nc_n_webp_mw_1", "likes": "231", "comments": "23", "user": "李煜4017", "type": "normal", "url": "https://www.xiaohongshu.com/explore/695fba96000000001a037896", "keyword": "中科大 高新校区"}, {"id": "668b6254000000000302695d", "title": "不愧是高新区咖啡排名第一", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/c692ce12a3eaeed26c17328d4886e7da/1040g008314vpvrjggu0049t06nqj8bsvt3ekcdg!nc_n_webp_mw_1", "likes": "198", "comments": "7", "user": "曾客气", "type": "normal", "url": "https://www.xiaohongshu.com/explore/668b6254000000000302695d", "keyword": "合肥高新区 探店"}, {"id": "6949595c000000001f00da93", "title": "字节大模型，又被腾讯“挖”走一位核心人物🤯", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/fead18644f8dc2fde8aee27d607b0ef8/notes_pre_post/1040g3k831qdacafq7o705obdfm8gjqdr5t5pue0!nc_n_webp_mw_1", "likes": "246", "comments": "32", "user": "DINQ.", "type": "normal", "url": "https://www.xiaohongshu.com/explore/6949595c000000001f00da93", "keyword": "中科大 AI"}, {"id": "680c579d000000001e000653", "title": "为了这一扇窗来合肥…", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/93b9494d8ebf2ff532960e41a895b50c/1040g00831gnntuvjji004a679aa7auvb55jc0b8!nc_n_webp_mw_1", "likes": "1557", "comments": "122", "user": "为什么要不开心", "type": "normal", "url": "https://www.xiaohongshu.com/explore/680c579d000000001e000653", "keyword": "合肥 约会"}, {"id": "67ca9d44000000000302821b", "title": "合肥的春天，在逍遥津沉溺了100次，玉兰花开", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/a77c47736253a5727c0a19ccaed03ebb/1040g2sg31enhu4il6e704a7u9av1b2bnhgpjbt0!nc_n_webp_mw_1", "likes": "793", "comments": "84", "user": "东方fly", "type": "video", "url": "https://www.xiaohongshu.com/explore/67ca9d44000000000302821b", "keyword": "合肥 赏花"}, {"id": "6991329b0000000028009f50", "title": "", "cover": "http://sns-webpic-qc.xhscdn.com/202603270153/5db9cf6430bd2b1b7f9893b0f787fd2f/spectrum/1040g0k031sjfig1fle705qbsdv276o500euob5g!nc_n_webp_mw_1", "likes": "1909", "comments": "82", "user": "中国科学技术大学通用人工智能研究所", "type": "video", "url": "https://www.xiaohongshu.com/explore/6991329b0000000028009f50", "keyword": "中科大"}, {"id": "696921d1000000000a02d08d", "title": "", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/1ef7c85d6da4f7c810b9f41b828054a5/1040g00831rc3qk4f1e4g5p92b3posis928dt7f0!nc_n_webp_mw_1", "likes": "327", "comments": "129", "user": "啦啦啦啦", "type": "normal", "url": "https://www.xiaohongshu.com/explore/696921d1000000000a02d08d", "keyword": "合肥高新区 美食"}, {"id": "695cd94d000000000e03cfb4", "title": "一年半后重回科大高新校区 心情复杂", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/fde3e3c14786d3bc7fc7981d374dadfb/1040g2sg31r0b21au7g7g5npq909gbq5c70rp580!nc_n_webp_mw_1", "likes": "182", "comments": "76", "user": "江卷卷", "type": "normal", "url": "https://www.xiaohongshu.com/explore/695cd94d000000000e03cfb4", "keyword": "中科大 高新校区"}, {"id": "69b770ac000000001a02800e", "title": "牛的天！！！高新天街太牛New了！！", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/0d9bf4807ad4e994021acdfd49eb4e71/notes_uhdr/1040g3qo31toqns1bnq005pa8c2o0ripi41jmcco!nc_n_webp_mw_1", "likes": "194", "comments": "317", "user": "龙湖合肥高新天街", "type": "normal", "url": "https://www.xiaohongshu.com/explore/69b770ac000000001a02800e", "keyword": "合肥高新区 探店"}, {"id": "68092c4a000000001202f05b", "title": "中科大计算机｜欢迎报考我的研究生", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/224c64d9fa097aa3f9fe2db70a21ae17/notes_pre_post/1040g3k831gkkp0ug3aeg5n99qn345iefk6vdg40!nc_n_webp_mw_1", "likes": "213", "comments": "64", "user": "woody木希", "type": "normal", "url": "https://www.xiaohongshu.com/explore/68092c4a000000001202f05b", "keyword": "中科大 AI"}, {"id": "69b5974d000000001a02cc28", "title": "合肥是一座巨大的lalaland…", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/cc52051c58c34faf4f9b2957f09f3098/notes_pre_post/1040g3k031tn0s37j724g4a49nlgieob663r4jvo!nc_n_webp_mw_1", "likes": "1551", "comments": "97", "user": "sharky🦈", "type": "normal", "url": "https://www.xiaohongshu.com/explore/69b5974d000000001a02cc28", "keyword": "合肥 约会"}, {"id": "69b2bb57000000002202c293", "title": "合肥踏春首选", "cover": "http://sns-webpic-qc.xhscdn.com/202603270154/80124e42bae0fc6ca20d4a83a48e5b50/1040g00831tk6gclv7o205o5m0stgbu07qpc8qo0!nc_n_webp_mw_1", "likes": "732", "comments": "57", "user": "vivi", "type": "normal", "url": "https://www.xiaohongshu.com/explore/69b2bb57000000002202c293", "keyword": "合肥 赏花"}]};
+const ALPHA_LAB_INLINE = {"source": "科大小青椒 (Alpha Lab · 张岸老师)", "userId": "5905662a50c4b44cd4968643", "fetchedAt": "2026-03-27T15:59:50+08:00", "count": 31, "items": [{"id": "custom_1774598369", "title": "Alpha Lab 现场 · 东校区理化大楼报告厅", "desc": "Alpha Lab 活动现场照片。数百名同学齐聚东校区理化大楼东三报告厅，座无虚席。", "timestamp": 1774598390352, "date": "2026-03-27", "cover": "", "url": "", "likes": "0", "type": "normal", "eventPlace": "东校区理化大楼东三报告厅", "coverLocal": "covers/custom_1774598369.jpg", "eventLat": 31.833022, "eventLng": 117.269663, "eventGeoSrc": "amap"}, {"id": "c2550acbecf7bb684c454531", "title": "人山人海！！！", "desc": "", "timestamp": 0, "date": "2026-03-27", "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/199d04558b5a051283deba214a233547/notes_pre_post/1040g3k831u783hd9io7g49eqqbj2l1i3hnosdkg!nc_n_nwebp_mw_1", "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643", "likes": "0", "type": "video"}, {"id": "69c27abe00000000230144d6", "title": "科大学子速冲！腾讯教你科学养AI小龙虾🦞", "desc": "谁懂啊！腾讯AI百校行直接开进中科大了！\n不是餐桌上的小龙虾，是能帮你搞科研、做教学的AI效率神器🦞\n3.28高新校区直接手把手教“养虾”，这波羊毛必须薅！\n腾讯专家现场带飞，从零到一教你一键安装部署\n不用懂复杂代码，新手也能轻松拥有专属AI小龙虾\n2000+技能包直接点亮✨\n内容创作/资料搜集/洞察分析全拿捏\n不管是课堂作业还是科研项目，直接让AI当你的高效搭子\n关键是这只虾超省心！\n定制安全护卫+全天候监控，病毒消杀拉满\n听话懂事不添乱，让你专心搞学习搞研究💻\n现场还有超有趣的“玩虾”挑战\n赢腾讯周边好礼，还能冲腾讯学堂专属实践证书📜\n\t\n📅活动时间：2026.3.28 14:00-17:00\n📍活动地点：中科大高新校区图书教育中心C101\n⚠️必带：电脑+移动电源！\n科大学子快冲！\n#中国科大[话题]# #腾讯AI百校行[话题]# #AI小龙虾[话题]# #科学养虾[话题]# #高校活动[话题]# #科大日常[话题]# #AI效率神器[话题]#", "timestamp": 1774353086000, "date": "2026-03-24", "cover": "http://sns-webpic-qc.xhscdn.com/202603270148/72a9747858dd2c462b53f75b7692c1ea/1040g2sg31u3jl4nnioe049eqqbj2l1i3f1i516g!nd_dft_wlteh_webp_3", "url": "https://www.xiaohongshu.com/explore/69c27abe00000000230144d6", "likes": "12", "type": "normal", "eventTime": "2026.3.28 14:00-17:00", "eventPlace": "中科大高新校区图书教育中心C101", "coverLocal": "covers/69c27abe00000000230144d6.webp", "eventLat": 31.818462, "eventLng": 117.129496, "eventGeoSrc": "known"}, {"id": "69be241b000000001b023dc2", "title": "科大喊你来养小龙虾🦞", "desc": "不养虾怕落伍？\n养虾怕夹手？\n科大官方养虾指南✅\n\t\n📅时间：2026.3.27（周五）14:30-16:00\n📍地点：东校区第五教学楼5101教室\n💡讲座亮点：\n1. 张焕杰老师讲透OpenClaw功能+实操\n2. AI学院特任教授分享使用经验（也就是我[萌萌哒R]）\n3. 智慧科大AI平台体验账号现场发\n4. 限量“小龙虾”现场领养，手慢无！\n\t\n全科大师生可冲，扫码/点链接报名就完事～\n报名链接：https://ustcnet.ustc.edu.cn/as/app/survery/209\n\t\n#OpenClaw[话题]# #AI小龙虾[话题]# #中科大[话题]# #AI前沿技术[话题]# #科技讲座[话题]#", "timestamp": 1774068763000, "date": "2026-03-21", "cover": "http://sns-webpic-qc.xhscdn.com/202603270148/704d6d699daa05b7c923f26d1d48a1b7/notes_pre_post/1040g3k031tvc0em07q0049eqqbj2l1i3ipm9dg0!nd_dft_wlteh_webp_3", "url": "https://www.xiaohongshu.com/explore/69be241b000000001b023dc2", "likes": "12", "type": "normal", "eventTime": "2026.3.27（周五）14:30-16:00", "eventPlace": "东校区第五教学楼5101教室", "coverLocal": "covers/69be241b000000001b023dc2.webp", "eventLat": 31.836854, "eventLng": 117.269603, "eventGeoSrc": "amap"}, {"id": "ffa2ffb5f30512d8f13b558a", "title": "不是烟花，胜似烟花", "desc": "", "timestamp": 0, "date": "2026-03-27", "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/a6b30e0aa4e1790720e3d81bfd93ed6e/1040g00831shh3n3i5m0049eqqbj2l1i3sheag5g!nc_n_nwebp_mw_1", "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643", "likes": "24", "type": "video"}, {"id": "a7a9deca81b8d7fd0c6c7339", "title": "Seed | GRU-Mem 门控循环记忆长文推理", "desc": "", "timestamp": 0, "date": "2026-03-27", "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/cafb10083cbf01abfa065e19b7fb8421/1040g2sg31sg1agvc68f049eqqbj2l1i3hbbbi1o!nc_n_nwebp_mw_1", "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643", "likes": "21", "type": "normal"}, {"id": "696920e8000000001a0213ad", "title": "为超哥扛大旗！ ", "desc": "欢迎科大的、对人工智能安全感兴趣的老师同学们莅临指导工作！\n\t\n本次重量级Talk我们邀请了上海人工智能实验室安全可信中心负责人，陆超超老师，本周五（1月16号）下午线下来中科大高新校区给“迈向安全可信的通用人工智能”的报告！！！\n\t\n对上海人工智能感兴趣的同学也可以线下来聊呀！\n#大模型[话题]# #中科大[话题]# #AlphaLab[话题]# #中国科学技术大学[话题]# #人工智能[话题]# #大模型安全[话题]# #人工智能安全[话题]# #上海AIlab[话题]# #浦江实验室[话题]#", "timestamp": 1768497384000, "date": "2026-01-16", "cover": "http://sns-webpic-qc.xhscdn.com/202603270149/dca5f1538ce07b6b018b718e6328fa68/1040g00831rcbgc98000049eqqbj2l1i32lji000!nd_dft_wlteh_webp_3", "url": "https://www.xiaohongshu.com/explore/696920e8000000001a0213ad", "likes": "18", "type": "normal", "coverLocal": "covers/696920e8000000001a0213ad.webp"}, {"id": "696654ac000000001a0325af", "title": "来听组会啦，将RLVR推广到通用领域！", "desc": "家人们，中科大Alpha Lab的硬核分享会来了👇\n清华NLP实验室余天予博士生主讲，聚焦RLPR将RLVR推广到通用领域推理问题，还会解读RLVR领域最新分析工作，全是大模型研究干货！\n⏰时间：2026.1.14 15:00-17:00\n💻线上：会议链接：https://meeting.tencent.com/dm/7LNlL5v6JmPr\n#腾讯会议[话题]#：700-8786-5438\n主讲人背景超顶，师从刘知远副教授，顶会论文多篇，开源项目星标破两万，大模型方向的同学别错过～\n\t\n#AI科研[话题]# #大模型[话题]# #NLP[话题]# #RLVR[话题]# #中国科学技术大学[话题]# #中科大[话题]# #清华[话题]# #人工智能[话题]# #科技前沿与未来[话题]# #AlphaLab[话题]#", "timestamp": 1768314028000, "date": "2026-01-13", "cover": "http://sns-webpic-qc.xhscdn.com/202603270149/9595bd823b4c1419b2b0bc0b598f1682/notes_pre_post/1040g3k031r9hvseuno0g49eqqbj2l1i39rjgqk8!nd_dft_wlteh_webp_3", "url": "https://www.xiaohongshu.com/explore/696654ac000000001a0325af", "likes": "24", "type": "normal", "eventTime": "2026.1.14 15:00-17:00", "coverLocal": "covers/696654ac000000001a0325af.webp"}, {"id": "695d028e000000001a023ccd", "title": "OpenReview全Open", "desc": "OpenReview打开，ACL刚刚投稿的文章，作者名字大放送，AI领域投稿双盲名存实亡…\n2026开年，这日子是怎么了[捂脸R]\n\t\nhttps://openreview.net/group?id=aclweb.org/ACL/ARR/2026/January#tab[话题]#-anonymous-pre-prints\n\t\n#OpenReview[话题]# #双盲[话题]#", "timestamp": 1767703182000, "date": "2026-01-06", "cover": "http://sns-webpic-qc.xhscdn.com/202603270149/2673217ea1eb2308f54ee74ad5ec14e1/notes_pre_post/1040g3k031r0gf879ga0049eqqbj2l1i3nan8qt0!nd_dft_wlteh_webp_3", "url": "https://www.xiaohongshu.com/explore/695d028e000000001a023ccd", "likes": "27", "type": "normal", "coverLocal": "covers/695d028e000000001a023ccd.webp"}, {"id": "695b4a3f000000001a02658d", "title": "科大讲座速码！斯坦福博士的协作智能体干货", "desc": "家人们！挖到宝了！中科大AlphaLab要开AI博士生讲座啦，主讲人是斯坦福CS博士吴颖馨（Shirley Wu），她是科大AIDS的优秀毕业生，学术实力直接拉满——研究成果CollabLLM拿下了ICML 2025杰出论文奖！\n\t\n这次讲座主题是Collaborative AI Agents（协作式AI智能体），不管是想了解人机协作的前沿方向，还是多智能体系统的搭建与规模化，这波干货都不能错过！\n\t\n📅时间：2026年1月7日 14:00-16:00\n💻线上：腾讯会议700-8786-5438\n主办：中科大Alpha Lab人工智能实验室\n\t\n讲座会拆解三个核心问题：怎么让AI智能体实现协作行为？如何搭建应对复杂需求的多智能体系统？又该怎么规模化提升系统能力？\n\t\n注意：本次线上讲座全英文\n\t\n#AI讲座[话题]# #中科大[话题]# #斯坦福AI[话题]# #CollaborativeAI[话题]# #人工智能前沿[话题]# #大模型[话题]# #人工智能未来[话题]# #AlphaLab[话题]#", "timestamp": 1767590463000, "date": "2026-01-05", "cover": "http://sns-webpic-qc.xhscdn.com/202603270149/334b9c5fd556c0d9a4ac4305ad6ca95e/1040g2sg31quq5h6tno0049eqqbj2l1i3p39uphg!nd_dft_wlteh_webp_3", "url": "https://www.xiaohongshu.com/explore/695b4a3f000000001a02658d", "likes": "29", "type": "normal", "eventTime": "2026年1月7日 14:00-16:00", "coverLocal": "covers/695b4a3f000000001a02658d.webp"}, {"id": "c2ce2e9843d69f5a71f4b47f", "title": "这是什么盛世啊！我科～", "desc": "", "timestamp": 0, "date": "2026-03-27", "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/2f3424dfddacb20721e07a4710eaee9f/notes_pre_post/1040g3k031qo7l6msg07049eqqbj2l1i3a7s3h6o!nc_n_nwebp_mw_1", "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643", "likes": "71", "type": "normal"}, {"id": "69525aea000000001e02bf3d", "title": "Alpha Lab喊你来听组会啦！", "desc": "2025年最后一天，我们邀请到了来自浙大的乔硕斐博士！来一场硬核但超实用的 invited talk：知识增强 + 可靠智能体规划，聚焦“大模型智能体为什么一到真实世界就不稳、不可控”，以及怎么把它变得更可靠。\n\t\n🧑‍💻 报告题目：基于知识增强的可靠智能体规划\n🎙️ 报告人：乔硕斐 Shuofei Qiao（浙江大学计算机科学与技术学院 博士生）\n🕒 时间：2025/12/31 15:00–17:00\n🏛️ 主办：Alpha Lab 人工智能实验室\n💻 腾讯会议：862-6746-3097\n\t\n#大模型[话题]# #中科大[话题]# #AlphaLab[话题]# #中国科学技术大学[话题]# #学术会议[话题]# #科研日常[话题]# #科研[话题]# #浙江大学[话题]# #人工智能[话题]#", "timestamp": 1767004906000, "date": "2025-12-29", "cover": "http://sns-webpic-qc.xhscdn.com/202603270150/9ce24ba87461c3be6447560894965cd2/notes_pre_post/1040g3k031qm3ip027g0049eqqbj2l1i361oqnmg!nd_dft_wlteh_webp_3", "url": "https://www.xiaohongshu.com/explore/69525aea000000001e02bf3d", "likes": "31", "type": "normal", "eventTime": "2025/12/31 15:00–17:00", "meetingId": "862-6746-3097", "speaker": "乔硕斐 Shuofei Qiao（浙江大学计算机科学与技术学院 博士生）", "topic": "基于知识增强的可靠智能体规划", "coverLocal": "covers/69525aea000000001e02bf3d.webp"}, {"id": "6948bafb000000001f0079cb", "title": "Alpha Lab组会邀请：RL推理的Scaling", "desc": "这一次，我组邀请到了清华唐杰老师组侯振宇同学！\n\t\n振宇从图神经网络时代就有非常牛的代表作GraphMAE，周三下午（12.24 2pm）要带给我们的，更是最近一年，大模型领域大家最为关心的话题：How to scale RL to unlock inferece-scaling capabilities? RL如何帮助大模型scaling，如何提升推理上限？\n\t\n让我们共同期待圣诞前夜长智慧！\n\t\nTitle: The RL and inference scaling for reasoning and agents\nAbstract：With the advancement of language model intelligence, Reinforcement Learning (RL) has emerged as an effective approach for enhancing complex reasoning capabilities. This is particularly relevant for overcoming the limitations of imitation learning, facilitating effective test-time scaling, and enabling self-exploratory learning. This report outlines how to scale the reinforcement learning process for language models to improve complex reasoning and unlock inference-scaling capabilities. Furthermore, it discusses how to encourage model exploration and acquire fine-grained supervision signals through sampling.\n\t\n#科研[话题]# #学术[话题]# #大模型[话题]# #中科大[话题]# #清华[话题]#  #组会[话题]# #人工智能[话题]#\n#大模型推理[话题]# #AlphaLab[话题]# #中国科学技术大学[话题]#", "timestamp": 1766374139000, "date": "2025-12-22", "cover": "http://sns-webpic-qc.xhscdn.com/202603270150/4a5e2979b7b4a97c275b2eae4c5c2cb3/1040g2sg31qcn7t9knu7049eqqbj2l1i30965gro!nd_dft_wlteh_webp_3", "url": "https://www.xiaohongshu.com/explore/6948bafb000000001f0079cb", "likes": "90", "type": "normal", "topic": "The RL and inference scaling for reasoning and agents", "coverLocal": "covers/6948bafb000000001f0079cb.webp"}, {"id": "69455b82000000001e03829b", "title": "户外“组会” ", "desc": "不会烧烤的科大人不是好科研人[派对R]##中科大[话题]# #AlphaLab[话题]# #上班不如上山[话题]#", "timestamp": 1766153090000, "date": "2025-12-19", "cover": "http://sns-webpic-qc.xhscdn.com/202603270150/3368f221806b97a25dab9af37ae87d59/1040g2sg31q9cl7gh7g0049eqqbj2l1i33atec18!nd_dft_wlteh_webp_3", "url": "https://www.xiaohongshu.com/explore/69455b82000000001e03829b", "likes": "36", "type": "video", "coverLocal": "covers/69455b82000000001e03829b.webp"}, {"id": "693ee7e6000000001e02706a", "title": "来听Alpha Lab组会啦！", "desc": "有幸邀请到了来自UCSD的老朋友，侯宇蓬！[庆祝R][庆祝R][庆祝R]\n\t\n可以说是最早做大模型推荐的学者之一，也可以说现在科研界做SID最有心得的一线学者之一，一直以来的推荐taste都惊人的领先，任何关注生成式推荐的小朋友都该来听听看！\n\t\n[烟花R]周三下午，不见不散[烟花R]\n\t\nBTW，组会的录屏会陆续在Alpha Lab主页上放出。\n组会的时间也从周五正式更改为周三～\n\t\n#科研学习[话题]# #博士生日常[话题]# #研究生组会[话题]# #大模型[话题]# #讲座[话题]# #生成式推荐[话题]# #中科大[话题]# #AlphaLab[话题]# #科研[话题]#", "timestamp": 1765730279000, "date": "2025-12-15", "cover": "http://sns-webpic-qc.xhscdn.com/202603270150/f11a2b1cc7dc34ad477c8a6d0e8325a4/notes_pre_post/1040g3k831q33m5bb7g0049eqqbj2l1i3ub84crg!nd_dft_wlteh_webp_3", "url": "https://www.xiaohongshu.com/explore/693ee7e6000000001e02706a", "likes": "63", "type": "normal", "coverLocal": "covers/693ee7e6000000001e02706a.webp"}, {"id": "6936dabc000000001f00c0b5", "title": "一起来听组会啦！ ", "desc": "Alpha Lab第二位邀请讲者，来自清华的刘芳甫！[庆祝R][庆祝R]\n\t\n大语言模型已经有了文字上的通用智能，下一步真正理解世界，空间智能是否就是进一步突破智能上限，不可或缺的一环呢？\n\t\n#大模型[话题]# #中国科学技术大学[话题]# #中科大[话题]# #AlphaLab[话题]#\n#世界模型[话题]# #空间智能[话题]# #大语言模型[话题]# #LLM[话题]#", "timestamp": 1765202620000, "date": "2025-12-08", "cover": "http://sns-webpic-qc.xhscdn.com/202603270150/35e5c653d524343b6ca8ea4a879d8974/notes_pre_post/1040g3k031pr856hj520049eqqbj2l1i3me6c4j8!nd_dft_wlteh_webp_3", "url": "https://www.xiaohongshu.com/explore/6936dabc000000001f00c0b5", "likes": "196", "type": "normal", "coverLocal": "covers/6936dabc000000001f00c0b5.webp"}, {"id": "692c639a000000001e036b35", "title": "科大 Alpha Lab 组会邀请！", "desc": "从下周开始，我组开始持续的邀请国内外一线的senior phd来给同学们带了各个领域的invited talk！\n\t\n他们中有做世界模型的、有做智能体的、有做RL训练的、有做Memory的、有做安全或推荐的。领域多样，来源多样，大部分因为空间、时区限制，会在线上开展。\n\t\n有幸邀请到的第一位讲者，赵伟翔，会在12.2号，周二晚到达高新校区，展开线下讲座！让我们敬请期待！\n\t\n也欢迎对人工智能最新科研进展感兴趣的科大同学，来参与会议、进行讨论！\n\t\n#中国科学技术大学[话题]# #大模型[话题]# #AlphaLab[话题]# #学术[话题]# #科研项目[话题]# #组会[话题]# #组会日常[话题]# #科研[话题]# #科研学习[话题]# #研究生组会[话题]#", "timestamp": 1764516762000, "date": "2025-11-30", "cover": "http://sns-webpic-qc.xhscdn.com/202603270151/4031d64e85598d38dcbbc0a47f2d36c3/notes_pre_post/1040g3k831ph173oaig7049eqqbj2l1i37barh8g!nd_dft_wlteh_webp_3", "url": "https://www.xiaohongshu.com/explore/692c639a000000001e036b35", "likes": "64", "type": "normal", "coverLocal": "covers/692c639a000000001e036b35.webp"}, {"id": "6929e3a0000000001e02df8d", "title": "ICLR 2026 事件的一些感慨", "desc": "ICLR官方回应很明确，基本符合中午和朋友聊天时的预判。这件事情的影响远没有结束，反而我认为刚刚开始。所以想聊聊自己今年既是AC又是Author的几点感慨。\n\t\n1. 有好多同学质疑，为什么不回滚到27号，直接回滚到rebuttal前，那对那些拿到加分的作者不是不公平吗？\n事实上，信息泄露的确切时间，是不能确定的。网传12号就有人发现了bug，那么设定哪个时间点都是不公平的，只能回退回rebuttal前。ICLR官方已经为保证公平性做了最大努力。\n\t\n2. 今年的机制相当于没有discussion的rebuttal，虽然失去了ICLR一贯的初心，但也不能说完全不公平毕竟不远的过去我们都是采用这个形式，甚至很多会议都没有rebuttal这个环节。\n\t\n3. 寄希望于今年ICLR依然保持公平和高质量，已经是不可能的，就单从AC的工作量来讲，就是巨大挑战。让AC在这个工作量以及权利被放大的情况下，保持公平，是不现实的。\n\t\n4. 这个事件影响最大的，可能是顶会的名誉，乃至整个AI圈对双盲失望透顶的情绪，领域里充斥着“原来我的paper在被这样的人审的气愤”，“原来我硕博毕业的生杀大权落在这些草包头上”。虽然大家多年来都在讲低质量审稿，但今年掀开了遮羞布，赤裸裸展现在所有人眼前。当然，这个事件对AI圈有没有正面影响呢，我觉得还是有可能的，让我们共同期盼。\n\t\n5. 我就是那个，我的好朋友给我学生的文章打了2分的人。且这个2分，是我今年所有投稿文章中，唯一一个2分。然而，我思考了一下后，有点庆幸我学生的这次开盒。在知道是他之前，我总觉得这篇文章是被低估的，但是考虑到他的专业性，我审慎的思考，可能需要更仔细的过一遍文章，过一遍他的review，加重他的review，在我原来预估中的权重。\n\t\n6. 同时，我还听到了一系列身边人的离奇故事，一些抱怨，甚至是真的联系审稿人加分被拒。挺好的，一次非常明确的双向筛选合作者的契机，建议每个同学和自己下一步的合作者、mentor多聊聊，聊不到一起的早点散伙。\n\t\n#iclr[话题]# #iclr26[话题]# #iclr出分[话题]# #iclr开会[话题]# #iclr分数[话题]#\n#审稿[话题]# #openreview[话题]# #openreview漏洞[话题]# #openreview事故[话题]# #openreview开盒[话题]#", "timestamp": 1764352928000, "date": "2025-11-29", "cover": "http://sns-webpic-qc.xhscdn.com/202603270151/92395f812d8c1e4dc4f60275c15a1554/1040g00831pehuc7a3c1049eqqbj2l1i3qt8bi2o!nd_dft_wlteh_webp_3", "url": "https://www.xiaohongshu.com/explore/6929e3a0000000001e02df8d", "likes": "118", "type": "normal", "coverLocal": "covers/6929e3a0000000001e02df8d.webp"}, {"id": "872456d44e116128772bbe05", "title": "祝贺吴校当选工程院院士！！！", "desc": "", "timestamp": 0, "date": "2026-03-27", "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/115f8f06566c9e583a6b32027fcf4ac0/notes_pre_post/1040g3k031p4np328io0049eqqbj2l1i36carf78!nc_n_nwebp_mw_1", "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643", "likes": "61", "type": "normal"}, {"id": "6915c6190000000005013627", "title": "🔥 NeurIPS中稿paper预讲会！", "desc": "这里有NeurIPS最新中稿的6篇新作！\n覆盖Memory，Reasoning，Multi-lingual等最热topic！\n有AI安全，生成式推荐等一线应用场景！\n\t\n想作者帮你画重点吗？\n想了解学界最新的大模型技术吗？\n想了解Alpha Lab的研究领域吗？\n想和无数可爱的聪明的头脑思维碰撞吗？\n11.19日，下午2点到4点，不见不散！\nTalk预约见第4、5页。\n\t\n讲者内容预告：\n🔹 史曜睿（USTC）\nSearch & Refine：让大模型“越检索越聪明”\n🔹 胡国庆（USTC）\nFading to Grow：偏好扩散模型助力推荐系统“越推越准”\n🔹 崔晨航（NUS）\nSafe + Safe = Unsafe？揭示“安全图像也能越狱模型”\n🔹 郑静楠（NUS）\nRSafe：让大模型主动进行“安全推理”\n🔹 盛乐恒（NUS）\n大模型推理强度规划：让模型“更会分配推理资源”\n🔹 陈宇昕（NUS）\n语言模型的抽象思维：到底是不是“英语思维”？\n\t\n#NeurIPS[话题]# #NeurIPS25[话题]#\n#大模型[话题]# #科研学习[话题]#\n#NUS[话题]# #新加坡国立大学[话题]#\n#ustc[话题]# #中科大[话题]# #中国科学技术大学[话题]# #AlphaLab[话题]#", "timestamp": 1763034649000, "date": "2025-11-13", "cover": "http://sns-webpic-qc.xhscdn.com/202603270151/a4c69bfae701d0cea3b20590bad13b9c/notes_pre_post/1040g3k031oqu6f3eha1g49eqqbj2l1i3aa9ka2g!nd_dft_wlteh_webp_3", "url": "https://www.xiaohongshu.com/explore/6915c6190000000005013627", "likes": "49", "type": "normal", "coverLocal": "covers/6915c6190000000005013627.webp"}, {"id": "690232bd0000000004022af7", "title": "MiniOneRec：完全开源的Scaling生成式推荐", "desc": "分享我们关于生成式推荐的最新工作整理。Follow快手的重磅研究OneRec, 我们提出MiniOneRec, 在开源场景验证了生成式推荐的Scaling Law, 并提出了一套改进的轻量训练pipeline！\n\t\n这是第[一R]个完全开源的生成式推荐框架，涵盖了\"SID生成、模型监督微调(SFT)到推荐驱动的强化学习(RL)\"的完整端到端训练流程。除了验证生成式推荐的Scaling Law，我们还做了以下改进：\n\t\n[红色心形R]首先，我们验证了世界知识对于生成式推荐性能的影响，并在SFT-Then-RL的两阶段优化中持续进行SID对齐。\n\t\n[黄色心形R]在强化学习阶段，通过Constrained Decoding保证模型生成合法可验证的item，并在Roll Out中替换常规Sampling策略为Beam Search以高效进行多样化的采样。\n\t\n[紫色心形R]奖励设计环节，设计基于规则的ACC准确率奖励与基于排序的惩罚项，对于高置信度负样本给予更大的惩罚。\n最终，MiniOneRec呈现出一个简洁而行之有效的生成式推荐方案。\n\t\n[蓝色心形R]未来，我们会持续维护MiniOneRec项目，提供包含RQ-Kmeans, RQ-VAE-v2(PLUM)在内的SID量化方法;更多的数据集支持;OneRec-Think的完整复现;以及我们关于生成式推荐的最新探索。欢迎大家的关注与讨论！[棒R]\n\t\nTechnical Report链接: https://arxiv.org/abs/2510.24431\n代码链接: https://github.com/AkaliKong/MiniOneRec\n\t\n#推荐算法[话题]#  #生成式AI[话题]# #生成式推荐[话题]#  #大模型[话题]# #科研[话题]# #中科大[话题]# #NUS[话题]# #推荐[话题]# #快手[话题]# #快手推荐[话题]#", "timestamp": 1761751741000, "date": "2025-10-29", "cover": "http://sns-webpic-qc.xhscdn.com/202603270151/45ea16d2d128e6ecbd47e5cec87d0fb1/notes_pre_post/1040g3k831o7qouqq06c049eqqbj2l1i31dujnv8!nd_dft_wlteh_webp_3", "url": "https://www.xiaohongshu.com/explore/690232bd0000000004022af7", "likes": "34", "type": "normal", "coverLocal": "covers/690232bd0000000004022af7.webp"}, {"id": "375e01602fd2c6762488f07d", "title": "Context Engineering = 注意力管理", "desc": "", "timestamp": 0, "date": "2026-03-27", "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/b5cd80eb6430c56dd12d1df4b26b3b42/1040g00831nvpe54j5m3049eqqbj2l1i3rvdvva8!nc_n_nwebp_mw_1", "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643", "likes": "22", "type": "normal"}, {"id": "2860ab72a4c53fa3f3ab1d78", "title": "万事俱备，快到导儿碗里来～", "desc": "", "timestamp": 0, "date": "2026-03-27", "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/9cec68562152566eebe1682d6de7716e/notes_pre_post/1040g3k031np0kpocg60g49eqqbj2l1i39h25uno!nc_n_nwebp_mw_1", "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643", "likes": "61", "type": "normal"}, {"id": "6db259041f061de81fcac6f5", "title": "意大利，好离谱！！！", "desc": "", "timestamp": 0, "date": "2026-03-27", "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/b899250721172e15cff976c6ac094dce/1040g00831k4ja5aoj00049eqqbj2l1i3mq5laa8!nc_n_nwebp_mw_1", "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643", "likes": "9", "type": "normal"}, {"id": "67d842f9000000001c00b65b", "title": "🚀中国科大人工智能方向硕士招生", "desc": "🌟 我是谁？\n张岸，2025 年加入 USTC 人工智能与数据科学学院任特任教授，博导，博士毕业于新加坡国立大学 (NUS)，在 NExT++ 做博士后研究。团队致力于研究大语言模型 (LLM) 和智能体（AI Agents），关注探索 LLM 的能力与特性，包括：\n🔹 复杂推理（让 AI 更聪明）\n🔹 自我反思 & 自我提升（让 AI 学会“打磨”自己）\n🔹 多模态融合 & Scaling Law（让 AI 更通用）\n🔹 解释性 & 可信性 & 高效性（让 AI 更安全可靠）\n\t\n我们的研究推动并应用于：\n💡 信息检索（如推荐系统）\n🏫 智慧教育（如智慧校园）\n🛡️ AI 安全\n\t\n🎯 你能获得什么？\n✅ 🔥 最前沿的 AI 研究方向：\n无论是大语言模型, Agent, 还是 AI 安全 & 对齐，我们都走在前沿，深入探索 AI 的本质与未来。\n✅ 💡 超高自由度的研究环境：\n我们尊重个性化成长，不做“螺丝钉”式管理！\n✅ 🏆 学术圈资源 & 产业合作 & 出国交流机会：\n我们与国内外实验室 & 企业有合作，有机会实习 & 出国交流，接触世界顶级研究资源！\n\t\n🎯 我们寻找什么样的你？\n🔹 热爱 AI 研究，愿意挑战前沿问题！\n🔹 有扎实的数理基础 & 编程能力（Python/深度学习相关）！\n🔹 有团队精神，能与大家一起成长，共同进步！\n🎓隐藏加分项：有竞赛/论文/开源项目经历\n\t\n🎯 如何加入我们？\n📩 2025 级考研硕士\n📬 联系邮箱：an_zhang@ustc.edu.cn\n📎 材料清单：  1. 个人简历 2. 成绩单\n\t\n🔗 了解更多：https://scholar.google.com.sg/citations?user=BcX7GJcAAAAJ&hl=en （时间倒序看最新研究方向，个人主页久未更新[笑哭R]，实验室主页还在路上[萌萌哒R]）\n\t\n#中科大[话题]# #硕士[话题]# #计算机考研[话题]# #人工智能发展[话题]# #硕士招生[话题]#\n#大语言模型生成招生贴[话题]#", "timestamp": 1742226169000, "date": "2025-03-17", "cover": "http://sns-webpic-qc.xhscdn.com/202603270152/72328e37179cb6ec00a448fc0ac60a12/notes_pre_post/1040g3k831f4rfsa56o7049eqqbj2l1i377hk6a0!nd_dft_wlteh_webp_3", "url": "https://www.xiaohongshu.com/explore/67d842f9000000001c00b65b", "likes": "244", "type": "normal", "coverLocal": "covers/67d842f9000000001c00b65b.webp"}, {"id": "1805ac3591e4282883fa3e18", "title": "当科大部署满血版DeepSeek-R1", "desc": "", "timestamp": 0, "date": "2026-03-27", "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/43c06e78e27c0c852cdb0a644bcfe4ae/notes_pre_post/1040g3k831f0i5opdm69g49eqqbj2l1i3810nrv8!nc_n_nwebp_mw_1", "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643", "likes": "11", "type": "normal"}, {"id": "d0bbd9ceb3a94808147ecd55", "title": "只此青绿-新加坡终场", "desc": "", "timestamp": 0, "date": "2026-03-27", "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/d503b3e97ca264f93b74f5442efc9b75/1040g0083110l7hhm6i0049eqqbj2l1i39gbr0kg!nc_n_nwebp_mw_1", "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643", "likes": "24", "type": "video"}, {"id": "f1172763d3a50fdfb954691a", "title": "🐲龙年龙灯！", "desc": "", "timestamp": 0, "date": "2026-03-27", "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/23988ef94370656d5b105eee1dd817e0/1040g00830v1mudq5le0049eqqbj2l1i3951p098!nc_n_nwebp_mw_1", "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643", "likes": "5", "type": "normal"}, {"id": "2dd30c891a3468ebfe00c8fc", "title": "闪现合肥～", "desc": "", "timestamp": 0, "date": "2026-03-27", "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/9867fb04e320fbfc8c3c7b1df0715d2b/1040g00830relht4v1i0049eqqbj2l1i3csdtl6g!nc_n_nwebp_mw_1", "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643", "likes": "9", "type": "normal"}, {"id": "6ee063e7fee521eb5afc2ff1", "title": "记录在科大的幸福生活～", "desc": "", "timestamp": 0, "date": "2026-03-27", "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/a01454a4ae73865eafb1a750eb0f64ca/1000g0082nq3f682jq00049eqqbj2l1i3d276q1g!nc_n_nwebp_mw_1", "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643", "likes": "37", "type": "normal"}, {"id": "c0a9f45a9373f435979a78cd", "title": "中科大惊现学生菜园！", "desc": "", "timestamp": 0, "date": "2026-03-27", "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/ee24c9822850e60922fb2916bb869e13/1000g0082m7crfp6jm00049eqqbj2l1i3dopi8h8!nc_n_nwebp_mw_1", "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643", "likes": "29", "type": "normal"}]};
+let alphaLabData = ALPHA_LAB_INLINE;
+
+async function loadAlphaLabNews() {
+  try {
+    const resp = await fetch('alpha-lab-news.json?t=' + Date.now());
+    if (resp.ok) alphaLabData = await resp.json();
+  } catch(e) {
+    // fetch 失败时用内联数据（离线/发给别人时）
+    if (!alphaLabData) alphaLabData = ALPHA_LAB_INLINE;
+  }
+  renderAlphaLabNews();
+}
+
+function renderAlphaLabNews() {
+  const el = document.getElementById('newsResults');
+  if (!alphaLabData || !alphaLabData.items?.length) {
+    el.innerHTML = '<div class="loading">暂无 Alpha Lab 资讯 · 数据抓取中...</div>';
+    return;
+  }
+  const items = alphaLabData.items;
+  const kw = newsCurrentKeyword;
+  const filtered = kw ? items.filter(it =>
+    it.title.toLowerCase().includes(kw) ||
+    (it.desc||'').toLowerCase().includes(kw) ||
+    (it.speaker||'').toLowerCase().includes(kw) ||
+    (it.topic||'').toLowerCase().includes(kw)
+  ) : items;
+
+  if (!filtered.length) {
+    el.innerHTML = `<div class="loading">未找到匹配的 Alpha Lab 资讯 · 关键词: ${kw}</div>`;
+    return;
+  }
+
+  // Store for detail view
+  window._alphaLabItems = filtered;
+
+  el.innerHTML = `<div class="section-header">⚡ Alpha Lab · ${filtered.length} 条 · 来源: 科大小青椒</div>`;
+
+  filtered.forEach((item, idx) => {
+    const date = item.date || '';
+    const hasEvent = item.eventTime || item.eventPlace || item.speaker || item.meetingId;
+    
+    let upcoming = false;
+    if (item.eventTime) {
+      const match = item.eventTime.match(/(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/);
+      if (match) {
+        const eventDate = new Date(match[1], match[2]-1, match[3]);
+        upcoming = eventDate >= new Date(new Date().toDateString());
+      }
+    }
+
+    let meta = `<span>📅 ${date}</span><span>👍 ${item.likes||0}</span>`;
+    if (upcoming) meta += '<span class="news-tag" style="background:#22c55e33;color:#22c55e">📣 即将开始</span>';
+    if (item.type === 'video') meta += '<span class="news-tag">🎬 视频</span>';
+
+    // 简要事件信息（卡片上）
+    let brief = '';
+    if (hasEvent) {
+      const parts = [];
+      if (item.eventTime) parts.push(`🕒 ${item.eventTime}`);
+      if (item.eventPlace) parts.push(`📍 ${item.eventPlace}`);
+      if (parts.length) brief = `<div style="margin-top:4px;font-size:11px;color:#94a3b8;line-height:1.4">${parts.join(' · ')}</div>`;
+    }
+
+    // 封面图
+    const coverImg = item.coverLocal
+      ? `<img class="news-cover" src="${item.coverLocal}" alt="" onerror="this.style.display='none'" loading="lazy">`
+      : (item.cover ? `<img class="news-cover" src="${item.cover.replace('http://','https://')}" alt="" onerror="this.style.display='none'" loading="lazy">` : '');
+
+    el.innerHTML += `<div class="news-card" onclick="showAlphaDetail(${idx})">
+      <div class="news-card-row">
+        ${coverImg}
+        <div class="news-card-body">
+          <div class="news-title">${item.title} <span class="fav-star ${isAlphaFaved(item.id)?'faved':''}" onclick="event.stopPropagation();const on=toggleAlphaFav('${item.id}');this.classList.toggle('faved',on);this.textContent=on?'★':'☆';renderFavs()">${isAlphaFaved(item.id)?'★':'☆'}</span></div>
+          <div class="news-meta">${meta}</div>
+          ${brief}
+        </div>
+      </div>
+    </div>`;
+  });
+
+  el.innerHTML += `<div class="note-box">⚡ 数据来源: <a href="https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643" target="_blank">科大小青椒</a> (Alpha Lab · 张岸老师)<br>📅 最后更新: ${alphaLabData.fetchedAt||'未知'} · 由 Alpha 自动抓取</div>`;
+
+  // 在地图上标记有地点信息的事件
+  renderEventMarkers();
+}
+
+// Alpha Lab 帖子详情弹窗
+function showAlphaDetail(idx) {
+  const item = window._alphaLabItems[idx];
+  if (!item) return;
+
+  // 清理 desc 中的话题标签
+  let cleanDesc = (item.desc || '').replace(/#[^#\[]+\[话题\]#\s*/g, '').trim();
+
+  // 事件信息卡片
+  let eventHtml = '';
+  if (item.eventTime || item.eventPlace || item.speaker || item.meetingId || item.topic) {
+    eventHtml = '<div class="adp-event">';
+    if (item.topic) eventHtml += `📝 <b>${item.topic}</b><br>`;
+    if (item.speaker) eventHtml += `🎙️ ${item.speaker}<br>`;
+    if (item.eventTime) eventHtml += `🕒 ${item.eventTime}<br>`;
+    if (item.eventPlace) eventHtml += `📍 ${item.eventPlace}<br>`;
+    if (item.meetingId) eventHtml += `💻 腾讯会议: <span class="ev-highlight">${item.meetingId}</span>`;
+    eventHtml += '</div>';
+  }
+
+  // 封面
+  const coverHtml = item.coverLocal
+    ? `<img class="adp-cover" src="${item.coverLocal}" alt="" onerror="this.style.display='none'">`
+    : (item.cover ? `<img class="adp-cover" src="${item.cover.replace('http://','https://')}" alt="" onerror="this.style.display='none'">` : '');
+
+  const overlay = document.createElement('div');
+  overlay.className = 'alpha-detail-overlay';
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+  overlay.innerHTML = `<div class="alpha-detail-panel">
+    <div class="adp-header">
+      ${coverHtml}
+      <button class="adp-close" onclick="this.closest('.alpha-detail-overlay').remove()">✕</button>
+    </div>
+    <div class="adp-content">
+      <div class="adp-title">${item.title}</div>
+      <div class="adp-meta">
+        <span>📅 ${item.date||''}</span>
+        <span>👍 ${item.likes||0}</span>
+        <span>by 科大小青椒</span>
+      </div>
+      ${eventHtml}
+      <div class="adp-desc">${cleanDesc}</div>
+    </div>
+    <div class="adp-footer">
+      ${item.eventLat ? `<button onclick="event.stopPropagation();map.setView([${item.eventLat},${item.eventLng}],17);this.closest('.alpha-detail-overlay').remove()" style="padding:6px 14px;border-radius:8px;font-size:12px;border:1px solid #22c55e;background:transparent;color:#22c55e;cursor:pointer">📍 在地图上查看</button>` : ''}
+      <button onclick="event.stopPropagation();const on=toggleAlphaFav('${item.id}');this.textContent=on?'★ 已收藏':'☆ 收藏';renderFavs()" style="padding:6px 14px;border-radius:8px;font-size:12px;border:1px solid #f59e0b;background:${isAlphaFaved(item.id)?'#f59e0b22':'transparent'};color:#f59e0b;cursor:pointer">${isAlphaFaved(item.id)?'★ 已收藏':'☆ 收藏'}</button>
+      <a class="xhs-link" href="${item.url}" target="_blank">📕 小红书原文</a>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+}
+
+// 修改 loadNews 以支持 alphalab 和 discover 类型
+const _origLoadNews = loadNews;
+loadNews = function(type, keyword) {
+  if(type) newsCurrentType = type;
+  if(keyword !== undefined && keyword !== null) newsCurrentKeyword = keyword.toLowerCase();
+  if(newsCurrentType === 'alphalab') {
+    loadAlphaLabNews();
+  } else if(newsCurrentType === 'discover') {
+    renderDiscoverFeed();
+  } else {
+    // 对于 notice/academic，将 type 映射回原来的逻辑
+    renderStaticNews();
+  }
+};
+
+// === 📱 发现 Feed（个性化小红书） ===
+const XHS_FEED_INLINE = XHS_FEED_DATA || null;
+
+function renderDiscoverFeed() {
+  const el = document.getElementById('newsResults');
+  const data = XHS_FEED_INLINE;
+  if (!data || !data.items || !data.items.length) {
+    el.innerHTML = '<div class="empty-fav">📱 暂无发现内容<br>数据更新中...</div>';
+    return;
+  }
+
+  let filtered = data.items;
+  if (newsCurrentKeyword) {
+    filtered = filtered.filter(it =>
+      (it.title||'').toLowerCase().includes(newsCurrentKeyword) ||
+      (it.keyword||'').toLowerCase().includes(newsCurrentKeyword) ||
+      (it.user||'').toLowerCase().includes(newsCurrentKeyword)
+    );
+  }
+
+  el.innerHTML = `<div class="section-header">📱 发现 · ${filtered.length} 条 · 小红书精选</div>`;
+
+  filtered.forEach((item) => {
+    const likes = item.likes || '0';
+    const kwTag = item.keyword ? `<span class="news-tag">${item.keyword}</span>` : '';
+
+    el.innerHTML += `<div class="news-card" onclick="window.open('${item.url}','_blank')" style="cursor:pointer">
+      <div class="news-card-row">
+        <div class="news-card-body">
+          <div class="news-title">${item.title || '无标题'}</div>
+          <div class="news-meta">
+            <span>👤 ${item.user || '匿名'}</span>
+            <span>👍 ${likes}</span>
+            ${kwTag}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  el.innerHTML += `<div class="note-box">📱 数据来源: 小红书搜索<br>🔑 关键词: ${(data.keywords||[]).join(' · ')}<br>📅 更新: ${data.fetchedAt||'未知'}</div>`;
+}
+
+// Init
+renderCampus();renderFavs();
+</script>
+</body>
+</html>
