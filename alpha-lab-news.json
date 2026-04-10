@@ -1,8 +1,8 @@
 {
-  "source": "科大小青椒 (Alpha Lab · 张岸老师)",
+  "source": "Alpha Lab",
   "userId": "5905662a50c4b44cd4968643",
-  "fetchedAt": "2026-03-27T15:59:50+08:00",
-  "count": 31,
+  "fetchedAt": "2026-04-10T16:13:03+08:00",
+  "count": 38,
   "items": [
     {
       "id": "custom_1774598369",
@@ -19,17 +19,6 @@
       "eventLat": 31.833022,
       "eventLng": 117.269663,
       "eventGeoSrc": "amap"
-    },
-    {
-      "id": "c2550acbecf7bb684c454531",
-      "title": "人山人海！！！",
-      "desc": "",
-      "timestamp": 0,
-      "date": "2026-03-27",
-      "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/199d04558b5a051283deba214a233547/notes_pre_post/1040g3k831u783hd9io7g49eqqbj2l1i3hnosdkg!nc_n_nwebp_mw_1",
-      "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643",
-      "likes": "0",
-      "type": "video"
     },
     {
       "id": "69c27abe00000000230144d6",
@@ -64,28 +53,6 @@
       "eventLat": 31.836854,
       "eventLng": 117.269603,
       "eventGeoSrc": "amap"
-    },
-    {
-      "id": "ffa2ffb5f30512d8f13b558a",
-      "title": "不是烟花，胜似烟花",
-      "desc": "",
-      "timestamp": 0,
-      "date": "2026-03-27",
-      "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/a6b30e0aa4e1790720e3d81bfd93ed6e/1040g00831shh3n3i5m0049eqqbj2l1i3sheag5g!nc_n_nwebp_mw_1",
-      "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643",
-      "likes": "24",
-      "type": "video"
-    },
-    {
-      "id": "a7a9deca81b8d7fd0c6c7339",
-      "title": "Seed | GRU-Mem 门控循环记忆长文推理",
-      "desc": "",
-      "timestamp": 0,
-      "date": "2026-03-27",
-      "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/cafb10083cbf01abfa065e19b7fb8421/1040g2sg31sg1agvc68f049eqqbj2l1i3hbbbi1o!nc_n_nwebp_mw_1",
-      "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643",
-      "likes": "21",
-      "type": "normal"
     },
     {
       "id": "696920e8000000001a0213ad",
@@ -136,17 +103,6 @@
       "type": "normal",
       "eventTime": "2026年1月7日 14:00-16:00",
       "coverLocal": "covers/695b4a3f000000001a02658d.webp"
-    },
-    {
-      "id": "c2ce2e9843d69f5a71f4b47f",
-      "title": "这是什么盛世啊！我科～",
-      "desc": "",
-      "timestamp": 0,
-      "date": "2026-03-27",
-      "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/2f3424dfddacb20721e07a4710eaee9f/notes_pre_post/1040g3k031qo7l6msg07049eqqbj2l1i3a7s3h6o!nc_n_nwebp_mw_1",
-      "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643",
-      "likes": "71",
-      "type": "normal"
     },
     {
       "id": "69525aea000000001e02bf3d",
@@ -238,17 +194,6 @@
       "coverLocal": "covers/6929e3a0000000001e02df8d.webp"
     },
     {
-      "id": "872456d44e116128772bbe05",
-      "title": "祝贺吴校当选工程院院士！！！",
-      "desc": "",
-      "timestamp": 0,
-      "date": "2026-03-27",
-      "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/115f8f06566c9e583a6b32027fcf4ac0/notes_pre_post/1040g3k031p4np328io0049eqqbj2l1i36carf78!nc_n_nwebp_mw_1",
-      "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643",
-      "likes": "61",
-      "type": "normal"
-    },
-    {
       "id": "6915c6190000000005013627",
       "title": "🔥 NeurIPS中稿paper预讲会！",
       "desc": "这里有NeurIPS最新中稿的6篇新作！\n覆盖Memory，Reasoning，Multi-lingual等最热topic！\n有AI安全，生成式推荐等一线应用场景！\n\t\n想作者帮你画重点吗？\n想了解学界最新的大模型技术吗？\n想了解Alpha Lab的研究领域吗？\n想和无数可爱的聪明的头脑思维碰撞吗？\n11.19日，下午2点到4点，不见不散！\nTalk预约见第4、5页。\n\t\n讲者内容预告：\n🔹 史曜睿（USTC）\nSearch & Refine：让大模型“越检索越聪明”\n🔹 胡国庆（USTC）\nFading to Grow：偏好扩散模型助力推荐系统“越推越准”\n🔹 崔晨航（NUS）\nSafe + Safe = Unsafe？揭示“安全图像也能越狱模型”\n🔹 郑静楠（NUS）\nRSafe：让大模型主动进行“安全推理”\n🔹 盛乐恒（NUS）\n大模型推理强度规划：让模型“更会分配推理资源”\n🔹 陈宇昕（NUS）\n语言模型的抽象思维：到底是不是“英语思维”？\n\t\n#NeurIPS[话题]# #NeurIPS25[话题]#\n#大模型[话题]# #科研学习[话题]#\n#NUS[话题]# #新加坡国立大学[话题]#\n#ustc[话题]# #中科大[话题]# #中国科学技术大学[话题]# #AlphaLab[话题]#",
@@ -271,6 +216,150 @@
       "likes": "34",
       "type": "normal",
       "coverLocal": "covers/690232bd0000000004022af7.webp"
+    },
+    {
+      "id": "67d842f9000000001c00b65b",
+      "title": "🚀中国科大人工智能方向硕士招生",
+      "desc": "🌟 我是谁？\n张岸，2025 年加入 USTC 人工智能与数据科学学院任特任教授，博导，博士毕业于新加坡国立大学 (NUS)，在 NExT++ 做博士后研究。团队致力于研究大语言模型 (LLM) 和智能体（AI Agents），关注探索 LLM 的能力与特性，包括：\n🔹 复杂推理（让 AI 更聪明）\n🔹 自我反思 & 自我提升（让 AI 学会“打磨”自己）\n🔹 多模态融合 & Scaling Law（让 AI 更通用）\n🔹 解释性 & 可信性 & 高效性（让 AI 更安全可靠）\n\t\n我们的研究推动并应用于：\n💡 信息检索（如推荐系统）\n🏫 智慧教育（如智慧校园）\n🛡️ AI 安全\n\t\n🎯 你能获得什么？\n✅ 🔥 最前沿的 AI 研究方向：\n无论是大语言模型, Agent, 还是 AI 安全 & 对齐，我们都走在前沿，深入探索 AI 的本质与未来。\n✅ 💡 超高自由度的研究环境：\n我们尊重个性化成长，不做“螺丝钉”式管理！\n✅ 🏆 学术圈资源 & 产业合作 & 出国交流机会：\n我们与国内外实验室 & 企业有合作，有机会实习 & 出国交流，接触世界顶级研究资源！\n\t\n🎯 我们寻找什么样的你？\n🔹 热爱 AI 研究，愿意挑战前沿问题！\n🔹 有扎实的数理基础 & 编程能力（Python/深度学习相关）！\n🔹 有团队精神，能与大家一起成长，共同进步！\n🎓隐藏加分项：有竞赛/论文/开源项目经历\n\t\n🎯 如何加入我们？\n📩 2025 级考研硕士\n📬 联系邮箱：an_zhang@ustc.edu.cn\n📎 材料清单：  1. 个人简历 2. 成绩单\n\t\n🔗 了解更多：https://scholar.google.com.sg/citations?user=BcX7GJcAAAAJ&hl=en （时间倒序看最新研究方向，个人主页久未更新[笑哭R]，实验室主页还在路上[萌萌哒R]）\n\t\n#中科大[话题]# #硕士[话题]# #计算机考研[话题]# #人工智能发展[话题]# #硕士招生[话题]#\n#大语言模型生成招生贴[话题]#",
+      "timestamp": 1742226169000,
+      "date": "2025-03-17",
+      "cover": "http://sns-webpic-qc.xhscdn.com/202603270152/72328e37179cb6ec00a448fc0ac60a12/notes_pre_post/1040g3k831f4rfsa56o7049eqqbj2l1i377hk6a0!nd_dft_wlteh_webp_3",
+      "url": "https://www.xiaohongshu.com/explore/67d842f9000000001c00b65b",
+      "likes": "244",
+      "type": "normal",
+      "coverLocal": "covers/67d842f9000000001c00b65b.webp"
+    },
+    {
+      "id": "69d78957000000001e00d0d8",
+      "title": "科研人刚需！！！AutoWiki",
+      "desc": "",
+      "timestamp": 0,
+      "date": "",
+      "cover": "",
+      "url": "https://www.xiaohongshu.com/explore/69d78957000000001e00d0d8",
+      "likes": "0",
+      "type": "normal"
+    },
+    {
+      "id": "69d732ac000000001a037a9a",
+      "title": "中科大高新校区的朋友们看过来！🦞",
+      "desc": "",
+      "timestamp": 0,
+      "date": "",
+      "cover": "",
+      "url": "https://www.xiaohongshu.com/explore/69d732ac000000001a037a9a",
+      "likes": "0",
+      "type": "normal"
+    },
+    {
+      "id": "69c63435000000002301f5df",
+      "title": "人山人海！！！",
+      "desc": "",
+      "timestamp": 0,
+      "date": "",
+      "cover": "",
+      "url": "https://www.xiaohongshu.com/explore/69c63435000000002301f5df",
+      "likes": "0",
+      "type": "normal"
+    },
+    {
+      "id": "698f34b7000000000d0084d0",
+      "title": "不是烟花，胜似烟花",
+      "desc": "",
+      "timestamp": 0,
+      "date": "",
+      "cover": "",
+      "url": "https://www.xiaohongshu.com/explore/698f34b7000000000d0084d0",
+      "likes": "0",
+      "type": "normal"
+    },
+    {
+      "id": "698dabe40000000028008f5a",
+      "title": "Seed | GRU-Mem 门控循环记忞长文推理",
+      "desc": "",
+      "timestamp": 0,
+      "date": "",
+      "cover": "",
+      "url": "https://www.xiaohongshu.com/explore/698dabe40000000028008f5a",
+      "likes": "0",
+      "type": "normal"
+    },
+    {
+      "id": "6954887b000000001f00d604",
+      "title": "这是什么盛世啊！我科～",
+      "desc": "",
+      "timestamp": 0,
+      "date": "",
+      "cover": "",
+      "url": "https://www.xiaohongshu.com/explore/6954887b000000001f00d604",
+      "likes": "0",
+      "type": "normal"
+    },
+    {
+      "id": "691fcba9000000001e025520",
+      "title": "祝贺吴校当选工程院院士！！！",
+      "desc": "",
+      "timestamp": 0,
+      "date": "",
+      "cover": "",
+      "url": "https://www.xiaohongshu.com/explore/691fcba9000000001e025520",
+      "likes": "0",
+      "type": "normal"
+    },
+    {
+      "id": "c2550acbecf7bb684c454531",
+      "title": "人山人海！！！",
+      "desc": "",
+      "timestamp": 0,
+      "date": "2026-03-27",
+      "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/199d04558b5a051283deba214a233547/notes_pre_post/1040g3k831u783hd9io7g49eqqbj2l1i3hnosdkg!nc_n_nwebp_mw_1",
+      "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643",
+      "likes": "0",
+      "type": "video"
+    },
+    {
+      "id": "ffa2ffb5f30512d8f13b558a",
+      "title": "不是烟花，胜似烟花",
+      "desc": "",
+      "timestamp": 0,
+      "date": "2026-03-27",
+      "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/a6b30e0aa4e1790720e3d81bfd93ed6e/1040g00831shh3n3i5m0049eqqbj2l1i3sheag5g!nc_n_nwebp_mw_1",
+      "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643",
+      "likes": "24",
+      "type": "video"
+    },
+    {
+      "id": "a7a9deca81b8d7fd0c6c7339",
+      "title": "Seed | GRU-Mem 门控循环记忆长文推理",
+      "desc": "",
+      "timestamp": 0,
+      "date": "2026-03-27",
+      "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/cafb10083cbf01abfa065e19b7fb8421/1040g2sg31sg1agvc68f049eqqbj2l1i3hbbbi1o!nc_n_nwebp_mw_1",
+      "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643",
+      "likes": "21",
+      "type": "normal"
+    },
+    {
+      "id": "c2ce2e9843d69f5a71f4b47f",
+      "title": "这是什么盛世啊！我科～",
+      "desc": "",
+      "timestamp": 0,
+      "date": "2026-03-27",
+      "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/2f3424dfddacb20721e07a4710eaee9f/notes_pre_post/1040g3k031qo7l6msg07049eqqbj2l1i3a7s3h6o!nc_n_nwebp_mw_1",
+      "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643",
+      "likes": "71",
+      "type": "normal"
+    },
+    {
+      "id": "872456d44e116128772bbe05",
+      "title": "祝贺吴校当选工程院院士！！！",
+      "desc": "",
+      "timestamp": 0,
+      "date": "2026-03-27",
+      "cover": "http://sns-webpic-qc.xhscdn.com/202603271558/115f8f06566c9e583a6b32027fcf4ac0/notes_pre_post/1040g3k031p4np328io0049eqqbj2l1i36carf78!nc_n_nwebp_mw_1",
+      "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643",
+      "likes": "61",
+      "type": "normal"
     },
     {
       "id": "375e01602fd2c6762488f07d",
@@ -304,18 +393,6 @@
       "url": "https://www.xiaohongshu.com/user/profile/5905662a50c4b44cd4968643",
       "likes": "9",
       "type": "normal"
-    },
-    {
-      "id": "67d842f9000000001c00b65b",
-      "title": "🚀中国科大人工智能方向硕士招生",
-      "desc": "🌟 我是谁？\n张岸，2025 年加入 USTC 人工智能与数据科学学院任特任教授，博导，博士毕业于新加坡国立大学 (NUS)，在 NExT++ 做博士后研究。团队致力于研究大语言模型 (LLM) 和智能体（AI Agents），关注探索 LLM 的能力与特性，包括：\n🔹 复杂推理（让 AI 更聪明）\n🔹 自我反思 & 自我提升（让 AI 学会“打磨”自己）\n🔹 多模态融合 & Scaling Law（让 AI 更通用）\n🔹 解释性 & 可信性 & 高效性（让 AI 更安全可靠）\n\t\n我们的研究推动并应用于：\n💡 信息检索（如推荐系统）\n🏫 智慧教育（如智慧校园）\n🛡️ AI 安全\n\t\n🎯 你能获得什么？\n✅ 🔥 最前沿的 AI 研究方向：\n无论是大语言模型, Agent, 还是 AI 安全 & 对齐，我们都走在前沿，深入探索 AI 的本质与未来。\n✅ 💡 超高自由度的研究环境：\n我们尊重个性化成长，不做“螺丝钉”式管理！\n✅ 🏆 学术圈资源 & 产业合作 & 出国交流机会：\n我们与国内外实验室 & 企业有合作，有机会实习 & 出国交流，接触世界顶级研究资源！\n\t\n🎯 我们寻找什么样的你？\n🔹 热爱 AI 研究，愿意挑战前沿问题！\n🔹 有扎实的数理基础 & 编程能力（Python/深度学习相关）！\n🔹 有团队精神，能与大家一起成长，共同进步！\n🎓隐藏加分项：有竞赛/论文/开源项目经历\n\t\n🎯 如何加入我们？\n📩 2025 级考研硕士\n📬 联系邮箱：an_zhang@ustc.edu.cn\n📎 材料清单：  1. 个人简历 2. 成绩单\n\t\n🔗 了解更多：https://scholar.google.com.sg/citations?user=BcX7GJcAAAAJ&hl=en （时间倒序看最新研究方向，个人主页久未更新[笑哭R]，实验室主页还在路上[萌萌哒R]）\n\t\n#中科大[话题]# #硕士[话题]# #计算机考研[话题]# #人工智能发展[话题]# #硕士招生[话题]#\n#大语言模型生成招生贴[话题]#",
-      "timestamp": 1742226169000,
-      "date": "2025-03-17",
-      "cover": "http://sns-webpic-qc.xhscdn.com/202603270152/72328e37179cb6ec00a448fc0ac60a12/notes_pre_post/1040g3k831f4rfsa56o7049eqqbj2l1i377hk6a0!nd_dft_wlteh_webp_3",
-      "url": "https://www.xiaohongshu.com/explore/67d842f9000000001c00b65b",
-      "likes": "244",
-      "type": "normal",
-      "coverLocal": "covers/67d842f9000000001c00b65b.webp"
     },
     {
       "id": "1805ac3591e4282883fa3e18",
