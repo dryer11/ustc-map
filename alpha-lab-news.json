@@ -26,7 +26,10 @@
       "likes": "7",
       "type": "normal",
       "eventTime": "4月10日 14:30-17:00",
-      "eventPlace": "高新校区图书教育中心C楼103教室"
+      "eventPlace": "高新校区图书教育中心C楼103教室",
+      "eventLat": 31.818462,
+      "eventLng": 117.129496,
+      "eventGeoSrc": "known"
     },
     {
       "id": "custom_1774598369",
