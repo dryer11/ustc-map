@@ -1,9 +1,33 @@
 {
   "source": "Alpha Lab",
   "userId": "5905662a50c4b44cd4968643",
-  "fetchedAt": "2026-04-10T16:13:03+08:00",
+  "fetchedAt": "2026-04-10T16:29:41+08:00",
   "count": 38,
   "items": [
+    {
+      "id": "69d78957000000001e00d0d8",
+      "title": "科研人刚需！！！AutoWiki",
+      "desc": "论文看了就忘、笔记散落一地？让LLM帮你\"编译\"一本活的wiki。AutoWiki：让 LLM 把论文\"编译\"成一本结构化 Wiki。GitHub：AlphaLab-USTC/AutoWiki-skill",
+      "timestamp": 1775723381611,
+      "date": "2026-04-09",
+      "cover": "https://sns-webpic-qc.xhscdn.com/202604101622/fb81b53b9c77f0ddc8172eac1b83130b/notes_pre_post/1040g3k831unr0mg92ac049eqqbj2l1i335l2f58!nd_dft_wlteh_webp_3",
+      "url": "https://www.xiaohongshu.com/explore/69d78957000000001e00d0d8",
+      "likes": "30",
+      "type": "normal"
+    },
+    {
+      "id": "69d732ac000000001a037a9a",
+      "title": "中科大高新校区的朋友们看过来！🦞",
+      "desc": "小龙虾游到高新校区了！4月10日 14:30-17:00 高新校区图书教育中心C楼103教室",
+      "timestamp": 1775723381611,
+      "date": "2026-04-09",
+      "cover": "https://sns-webpic-qc.xhscdn.com/202604101625/c887c3d724a4085289899b6f20e565c2/notes_pre_post/1040g3k831unr0mg92a7g49eqqbj2l1i3eglvgjo!nd_dft_wlteh_webp_3",
+      "url": "https://www.xiaohongshu.com/explore/69d732ac000000001a037a9a",
+      "likes": "7",
+      "type": "normal",
+      "eventTime": "4月10日 14:30-17:00",
+      "eventPlace": "高新校区图书教育中心C楼103教室"
+    },
     {
       "id": "custom_1774598369",
       "title": "Alpha Lab 现场 · 东校区理化大楼报告厅",
@@ -19,6 +43,17 @@
       "eventLat": 31.833022,
       "eventLng": 117.269663,
       "eventGeoSrc": "amap"
+    },
+    {
+      "id": "69c63435000000002301f5df",
+      "title": "人山人海！！！",
+      "desc": "",
+      "timestamp": 1774540800000,
+      "date": "2026-03-27",
+      "cover": "",
+      "url": "https://www.xiaohongshu.com/explore/69c63435000000002301f5df",
+      "likes": "0",
+      "type": "normal"
     },
     {
       "id": "69c27abe00000000230144d6",
@@ -53,6 +88,28 @@
       "eventLat": 31.836854,
       "eventLng": 117.269603,
       "eventGeoSrc": "amap"
+    },
+    {
+      "id": "698f34b7000000000d0084d0",
+      "title": "不是烟花，胜似烟花",
+      "desc": "以铁为墨 以夜为卷 写尽人间璀璨 #火树银花 #打铁花 #忻州古城",
+      "timestamp": 1770912000000,
+      "date": "2026-02-13",
+      "cover": "",
+      "url": "https://www.xiaohongshu.com/explore/698f34b7000000000d0084d0",
+      "likes": "0",
+      "type": "normal"
+    },
+    {
+      "id": "698dabe40000000028008f5a",
+      "title": "Seed | GRU-Mem 门控循环记忞长文推理",
+      "desc": "和Seed合作的工作。GRU-Mem：双门控递归记忆用于长上下文推理。Paper: arxiv.org/pdf/2602.10560",
+      "timestamp": 1770825600000,
+      "date": "2026-02-12",
+      "cover": "https://sns-webpic-qc.xhscdn.com/202604101626/357928d07f781228fe503d8445cda413/1040g2sg31sg1agvc68e049eqqbj2l1i3adnhaj0!nd_dft_wlteh_webp_3",
+      "url": "https://www.xiaohongshu.com/explore/698dabe40000000028008f5a",
+      "likes": "0",
+      "type": "normal"
     },
     {
       "id": "696920e8000000001a0213ad",
@@ -103,6 +160,17 @@
       "type": "normal",
       "eventTime": "2026年1月7日 14:00-16:00",
       "coverLocal": "covers/695b4a3f000000001a02658d.webp"
+    },
+    {
+      "id": "6954887b000000001f00d604",
+      "title": "这是什么盛世啊！我科～",
+      "desc": "通用人工智能研究所@ustc成立仪式，大咖云集",
+      "timestamp": 1767110400000,
+      "date": "2025-12-31",
+      "cover": "https://sns-webpic-qc.xhscdn.com/202604101627/a295125a0f131bc03906b8d10fe64a16/notes_pre_post/1040g3k031qo7l6msg07049eqqbj2l1i3a7s3h6o!nd_dft_wgth_webp_3",
+      "url": "https://www.xiaohongshu.com/explore/6954887b000000001f00d604",
+      "likes": "1",
+      "type": "normal"
     },
     {
       "id": "69525aea000000001e02bf3d",
@@ -194,6 +262,17 @@
       "coverLocal": "covers/6929e3a0000000001e02df8d.webp"
     },
     {
+      "id": "691fcba9000000001e025520",
+      "title": "祝贺吴校当选工程院院士！！！",
+      "desc": "吴枫副校长当选中国工程院院士",
+      "timestamp": 1763654400000,
+      "date": "2025-11-21",
+      "cover": "https://sns-webpic-qc.xhscdn.com/202604101628/66dd4292a0efb4c0e96b0e2fd31e4b69/notes_pre_post/1040g3k031p4np328io1049eqqbj2l1i3gf7uceg!nd_dft_wlteh_webp_3",
+      "url": "https://www.xiaohongshu.com/explore/691fcba9000000001e025520",
+      "likes": "3",
+      "type": "normal"
+    },
+    {
       "id": "6915c6190000000005013627",
       "title": "🔥 NeurIPS中稿paper预讲会！",
       "desc": "这里有NeurIPS最新中稿的6篇新作！\n覆盖Memory，Reasoning，Multi-lingual等最热topic！\n有AI安全，生成式推荐等一线应用场景！\n\t\n想作者帮你画重点吗？\n想了解学界最新的大模型技术吗？\n想了解Alpha Lab的研究领域吗？\n想和无数可爱的聪明的头脑思维碰撞吗？\n11.19日，下午2点到4点，不见不散！\nTalk预约见第4、5页。\n\t\n讲者内容预告：\n🔹 史曜睿（USTC）\nSearch & Refine：让大模型“越检索越聪明”\n🔹 胡国庆（USTC）\nFading to Grow：偏好扩散模型助力推荐系统“越推越准”\n🔹 崔晨航（NUS）\nSafe + Safe = Unsafe？揭示“安全图像也能越狱模型”\n🔹 郑静楠（NUS）\nRSafe：让大模型主动进行“安全推理”\n🔹 盛乐恒（NUS）\n大模型推理强度规划：让模型“更会分配推理资源”\n🔹 陈宇昕（NUS）\n语言模型的抽象思维：到底是不是“英语思维”？\n\t\n#NeurIPS[话题]# #NeurIPS25[话题]#\n#大模型[话题]# #科研学习[话题]#\n#NUS[话题]# #新加坡国立大学[话题]#\n#ustc[话题]# #中科大[话题]# #中国科学技术大学[话题]# #AlphaLab[话题]#",
@@ -228,83 +307,6 @@
       "likes": "244",
       "type": "normal",
       "coverLocal": "covers/67d842f9000000001c00b65b.webp"
-    },
-    {
-      "id": "69d78957000000001e00d0d8",
-      "title": "科研人刚需！！！AutoWiki",
-      "desc": "",
-      "timestamp": 0,
-      "date": "",
-      "cover": "",
-      "url": "https://www.xiaohongshu.com/explore/69d78957000000001e00d0d8",
-      "likes": "0",
-      "type": "normal"
-    },
-    {
-      "id": "69d732ac000000001a037a9a",
-      "title": "中科大高新校区的朋友们看过来！🦞",
-      "desc": "",
-      "timestamp": 0,
-      "date": "",
-      "cover": "",
-      "url": "https://www.xiaohongshu.com/explore/69d732ac000000001a037a9a",
-      "likes": "0",
-      "type": "normal"
-    },
-    {
-      "id": "69c63435000000002301f5df",
-      "title": "人山人海！！！",
-      "desc": "",
-      "timestamp": 0,
-      "date": "",
-      "cover": "",
-      "url": "https://www.xiaohongshu.com/explore/69c63435000000002301f5df",
-      "likes": "0",
-      "type": "normal"
-    },
-    {
-      "id": "698f34b7000000000d0084d0",
-      "title": "不是烟花，胜似烟花",
-      "desc": "",
-      "timestamp": 0,
-      "date": "",
-      "cover": "",
-      "url": "https://www.xiaohongshu.com/explore/698f34b7000000000d0084d0",
-      "likes": "0",
-      "type": "normal"
-    },
-    {
-      "id": "698dabe40000000028008f5a",
-      "title": "Seed | GRU-Mem 门控循环记忞长文推理",
-      "desc": "",
-      "timestamp": 0,
-      "date": "",
-      "cover": "",
-      "url": "https://www.xiaohongshu.com/explore/698dabe40000000028008f5a",
-      "likes": "0",
-      "type": "normal"
-    },
-    {
-      "id": "6954887b000000001f00d604",
-      "title": "这是什么盛世啊！我科～",
-      "desc": "",
-      "timestamp": 0,
-      "date": "",
-      "cover": "",
-      "url": "https://www.xiaohongshu.com/explore/6954887b000000001f00d604",
-      "likes": "0",
-      "type": "normal"
-    },
-    {
-      "id": "691fcba9000000001e025520",
-      "title": "祝贺吴校当选工程院院士！！！",
-      "desc": "",
-      "timestamp": 0,
-      "date": "",
-      "cover": "",
-      "url": "https://www.xiaohongshu.com/explore/691fcba9000000001e025520",
-      "likes": "0",
-      "type": "normal"
     },
     {
       "id": "c2550acbecf7bb684c454531",
